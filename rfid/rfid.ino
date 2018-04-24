@@ -1,107 +1,140 @@
 #include <SPI.h>
-#include <MFRC522.h>
-#include <ESP8266WiFi.h>
-#define PubNub_BASE_CLIENT WiFiClient
-#define PUBNUB_DEFINE_STRSPN_AND_STRNCASECMP
-#include <PubNub.h>
-//#include <aJSON.h>
 
-#define RST_PIN         5          // Configurable, see typical pin layout above
-#define SS_PIN          4         // Configurable, see typical pin layout above
+#include <ESP8266WiFi.h>
+#include <ESP8266WiFiMulti.h>
+#define PubNub_BASE_CLIENT WiFiClient
+#include <PubNub.h>
+#include "secrets.h"
+
+#include <MFRC522.h>
+#define RST_PIN         5
+#define SS_PIN          4
+
+ESP8266WiFiMulti WiFiMulti;
+
+const static char channel[] = "rfid"; // channel to use
+
+char message[256];
+
+volatile int pingNow;
+unsigned long oldTime;
 
 byte readCard[4];
-MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
+MFRC522 mfrc522(SS_PIN, RST_PIN);
 
 #define PN_CHANNEL "Test"
 
 void setup() {
-	Serial.begin(115200);;		// Initialize serial communications with the PC
-  Serial.print("Starting");
-	while (!Serial);
-	SPI.begin();
-	mfrc522.PCD_Init();
-	mfrc522.PCD_DumpVersionToSerial();
-  delay(500);
+  Serial.begin(115200);
+  while (!Serial);
+  Serial.print("setup()");
 
+  // We start by connecting to a WiFi network
+  WiFi.mode(WIFI_STA);
+  WiFiMulti.addAP(SECRET_SSID, SECRET_SSID_PASSWORD);
+
+  Serial.println();
+  Serial.println();
   Serial.print("Wait for WiFi... ");
-  WiFi.begin("*****", "*****");
 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+  while(WiFiMulti.run() != WL_CONNECTED) {
     Serial.print(".");
+    delay(500);
   }
+
   Serial.println("");
-  Serial.println("WiFi connected");  
+  Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
-  Serial.println("");
-  Serial.println("Configure PubNub"); 
-  //Do pubnub init here......
+  delay(500);
+
+  PubNub.begin(SECRET_PUBKEY, SECRET_SUBKEY);
+  Serial.println("PubNub set up");
+
+  oldTime = 0;
+  pingNow = 10000; // make sure to send a ping first :)
+
+  SPI.begin();
+
+  // Init the rfid reader
+  mfrc522.PCD_Init();
+  mfrc522.PCD_DumpVersionToSerial();
+  delay(500);
 }
 
 void loop() {
-  getID2();
-	/*// Look for new cards
-	if ( ! mfrc522.PICC_IsNewCardPresent()) {
-		return;
-	}
+  // Only process counters once per second
+  if((millis() - oldTime) > 1000) {
+    oldTime = millis();
 
-	// Select one of the cards
-  Serial.println("Check card...");
-	if ( ! mfrc522.PICC_ReadCardSerial()) {
-		return;
-	}
-
-	// Dump debug info about the card; PICC_HaltA() is automatically called
- Serial.print("Dump card.");
-	mfrc522.PICC_DumpToSerial(&(mfrc522.uid));*/
-  
+    ping();
+  }
+  publishId();
 }
 
-uint8_t getID2() {
-    // Getting ready for Reading PICCs
-  if ( ! mfrc522.PICC_IsNewCardPresent()) { //If a new PICC placed to RFID reader continue
+int publishId() {
+  if (!mfrc522.PICC_IsNewCardPresent()) {
     return 0;
   }
-  if ( ! mfrc522.PICC_ReadCardSerial()) {   //Since a PICC placed get Serial and continue
+  if (!mfrc522.PICC_ReadCardSerial()) {
     return 0;
   }
-  Serial.print("UID tag :");
-  String content= "";
-  byte letter;
-  for (byte i = 0; i < mfrc522.uid.size; i++) 
+  int len = mfrc522.uid.size;
+  char buffer[(len*2) + 1];
+  for (byte i = 0; i < len; i++)
   {
-     Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
-     Serial.print(mfrc522.uid.uidByte[i], HEX);
-     content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
-     content.concat(String(mfrc522.uid.uidByte[i], HEX));
+     byte nib1 = (mfrc522.uid.uidByte[i] >> 4) & 0x0F;
+     byte nib2 = (mfrc522.uid.uidByte[i] >> 0) & 0x0F;
+     buffer[i*2+0] = nib1  < 0xA ? '0' + nib1  : 'A' + nib1  - 0xA;
+     buffer[i*2+1] = nib2  < 0xA ? '0' + nib2  : 'A' + nib2  - 0xA;
   }
+  buffer[len*2] = '\0';
   mfrc522.PICC_HaltA(); 
   Serial.println();
   Serial.print("Message : ");
-  content.toUpperCase();
+  Serial.print(buffer);
+  createMessage(message, buffer);
+  publish(message);
 }
 
-uint8_t getID() {
-  // Getting ready for Reading PICCs
-  if ( ! mfrc522.PICC_IsNewCardPresent()) { //If a new PICC placed to RFID reader continue
-    return 0;
+void ping() {
+  if (pingNow >= 30) {
+    Serial.println("Sending ping");
+    createPing(message);
+    publish(message);
+    pingNow = 0;
   }
-  if ( ! mfrc522.PICC_ReadCardSerial()) {   //Since a PICC placed get Serial and continue
-    return 0;
-  }
-  // There are Mifare PICCs which have 4 byte or 7 byte UID care if you use 7 byte PICC
-  // I think we should assume every PICC as they have 4 byte UID
-  // Until we support 7 byte PICCs
-  Serial.println(F("Scanned PICC's UID:"));
-  for ( uint8_t i = 0; i < 4; i++) {  //
-    readCard[i] = mfrc522.uid.uidByte[i];
-    Serial.print(readCard[i], HEX);
-  }
-  Serial.println("");
-  String myString = String((char *)readCard);
-  Serial.println(myString);
-  mfrc522.PICC_HaltA(); // Stop reading
-  return 1;
+
+  pingNow++;
 }
+
+void createMessage(char* s, char* rfid) {
+  sprintf(s, "{\"source\": \"rfid\",\"type\": \"event\",\"rfid\": \"%s\"}", rfid);
+}
+
+void createPing(char* s) {
+  sprintf(s, "{\"source\": \"rfid\",\"type\": \"ping\",\"uptime\": \"%d\"}", millis() / 1000);
+}
+
+void publish(char* msg) {
+  WiFiClient *client;
+
+  client = PubNub.publish(channel, msg);
+
+  if (!client) {
+    //Serial.println("publishing error");
+    delay(1000);
+    return;
+  }
+  if (PubNub.get_last_http_status_code_class() != PubNub::http_scc_success) {
+    Serial.print("Got HTTP status code error from PubNub, class: ");
+    Serial.print(PubNub.get_last_http_status_code_class(), DEC);
+  }
+  while (client->available()) {
+    Serial.write(client->read());
+  }
+  client->stop();
+  Serial.println("---");
+}
+
