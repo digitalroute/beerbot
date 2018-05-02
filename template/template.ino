@@ -1,6 +1,6 @@
 
 /*
- *  This sketch sends a message to a TCP server
+ *  Biruino template
  *
  */
 #include <SPI.h>
@@ -13,16 +13,22 @@
 
 ESP8266WiFiMulti WiFiMulti;
 
-const static char channel[] = "flow"; // channel to use
+const static char channel[] = "template"; // channel to use
 
 char message[256];
 
 volatile int pingNow;
 unsigned long oldTime;
+unsigned long feedbackTimer;
+int ledStatus;
+int feedback;
 
 void setup() {
   Serial.begin(115200);
-  delay(10);
+  while (!Serial);
+  Serial.print("setup()");
+
+  pinMode(LED_BUILTIN, OUTPUT);
 
   // We start by connecting to a WiFi network
   WiFi.mode(WIFI_STA);
@@ -48,18 +54,36 @@ void setup() {
   Serial.println("PubNub set up");
 
   oldTime = 0;
+  feedbackTimer = 0;
   pingNow = 10000; // make sure to send a ping first :)
+  ledStatus = 0;
+  feedback = 0;
+  ping();
 }
 
 void loop() {
-  // Only process counters once per second
   if((millis() - oldTime) > 1000) {
     oldTime = millis();
 
-    createMessage(message, 123);
-    publish(message);
-
     ping();
+    if (feedback == 0) {
+      toggleLed();
+    }
+  }
+
+  if ((millis() - feedbackTimer) > 200 && feedback > 0) {
+    toggleLed();
+    feedback--;
+  }
+}
+
+void toggleLed() {
+  if (ledStatus > 0) {
+    digitalWrite(LED_BUILTIN, LOW);
+    ledStatus = 0;
+  } else {
+    digitalWrite(LED_BUILTIN, HIGH);
+    ledStatus = 1;    
   }
 }
 
