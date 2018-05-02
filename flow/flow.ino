@@ -1,3 +1,8 @@
+
+/*
+ *  Biruino template
+ *
+ */
 #include <SPI.h>
 
 #include <ESP8266WiFi.h>
@@ -6,26 +11,23 @@
 #include <PubNub.h>
 #include "secrets.h"
 
-#include <MFRC522.h>
-#define RST_PIN         5
-#define SS_PIN          4
-
 ESP8266WiFiMulti WiFiMulti;
 
-const static char channel[] = "rfid"; // channel to use
+const static char channel[] = "flow"; // channel to use
 
 char message[256];
+
+byte sensorPin = 0;  // input pin
+byte interruptPin = 0;
+volatile int pulseCount = 0;
+unsigned long totalCount = 0;
+int sendZeroUsage = 0;
 
 volatile int pingNow;
 unsigned long oldTime;
 unsigned long feedbackTimer;
 int ledStatus;
 int feedback;
-
-byte readCard[4];
-MFRC522 mfrc522(SS_PIN, RST_PIN);
-
-#define PN_CHANNEL "Test"
 
 void setup() {
   Serial.begin(115200);
@@ -63,13 +65,9 @@ void setup() {
   ledStatus = 0;
   feedback = 0;
   ping();
-  
-  SPI.begin();
 
-  // Init the rfid reader
-  mfrc522.PCD_Init();
-  mfrc522.PCD_DumpVersionToSerial();
-  delay(500);
+  pinMode(sensorPin, INPUT);
+  attachInterrupt(interruptPin, pulseCounter, FALLING);
 }
 
 void loop() {
@@ -87,34 +85,21 @@ void loop() {
     feedback--;
   }
 
-  publishId();
 
-}
 
-int publishId() {
-  if (!mfrc522.PICC_IsNewCardPresent()) {
-    return 0;
+  if (pulseCount > 0) {
+    createMessage(message, pulseCount, totalCount);
+    publish(message);
+    sendZeroUsage = 1;
+  } else {
+    if (sendZeroUsage > 0) {
+      createMessage(message, 0, totalCount);
+      publish(message);
+      sendZeroUsage = 0;
+    }
   }
-  if (!mfrc522.PICC_ReadCardSerial()) {
-    return 0;
-  }
-  int len = mfrc522.uid.size;
-  char buffer[(len*2) + 1];
-  for (byte i = 0; i < len; i++)
-  {
-     byte nib1 = (mfrc522.uid.uidByte[i] >> 4) & 0x0F;
-     byte nib2 = (mfrc522.uid.uidByte[i] >> 0) & 0x0F;
-     buffer[i*2+0] = nib1  < 0xA ? '0' + nib1  : 'A' + nib1  - 0xA;
-     buffer[i*2+1] = nib2  < 0xA ? '0' + nib2  : 'A' + nib2  - 0xA;
-  }
-  buffer[len*2] = '\0';
-  mfrc522.PICC_HaltA(); 
-  Serial.println();
-  Serial.print("Message : ");
-  Serial.print(buffer);
-  createMessage(message, buffer);
-  publish(message);
-  feedback = 5;
+
+  
 }
 
 void toggleLed() {
@@ -134,21 +119,21 @@ void ping() {
     publish(message);
     pingNow = 0;
   }
-
+  
   pingNow++;
 }
 
-void createMessage(char* s, char* rfid) {
-  sprintf(s, "{\"source\": \"rfid\",\"type\": \"event\",\"rfid\": \"%s\"}", rfid);
+void createMessage(char* s, int usage) {
+  sprintf(s, "{\"usage\": \"%d\",\"source\": \"flowmeter\",\"type\": \"counter\",\"uptime\": \"%d\"}", usage, millis() / 1000);
 }
 
 void createPing(char* s) {
-  sprintf(s, "{\"source\": \"rfid\",\"type\": \"ping\",\"uptime\": \"%d\"}", millis() / 1000);
+  sprintf(s, "{\"source\": \"flowmeter\",\"type\": \"ping\",\"uptime\": \"%d\"}", millis() / 1000);
 }
 
 void publish(char* msg) {
   WiFiClient *client;
-
+  
   client = PubNub.publish(channel, msg);
 
   if (!client) {
@@ -165,5 +150,11 @@ void publish(char* msg) {
   }
   client->stop();
   Serial.println("---");
+  
+}
+
+void pulseCounter() {
+  pulseCount++;
+  totalCount++;
 }
 

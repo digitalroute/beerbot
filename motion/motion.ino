@@ -1,6 +1,5 @@
-
 /*
- *  Biruino template
+ *  Read PIR motion sensor and publish to pubnub when motion is detected.
  *
  */
 #include <SPI.h>
@@ -13,22 +12,21 @@
 
 ESP8266WiFiMulti WiFiMulti;
 
-const static char channel[] = "template"; // channel to use
+const static char channel[] = "motion"; // channel to use
 
 char message[256];
 
 volatile int pingNow;
 unsigned long oldTime;
-unsigned long feedbackTimer;
-int ledStatus;
-int feedback;
+
+int sensor = 5;              // the pin that the sensor is atteched to
+int state = LOW;             // by default, no motion detected
 
 void setup() {
-  Serial.begin(115200);
-  while (!Serial);
-  Serial.print("setup()");
+  pinMode(sensor, INPUT);
 
-  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.begin(115200);
+  delay(10);
 
   // We start by connecting to a WiFi network
   WiFi.mode(WIFI_STA);
@@ -54,36 +52,38 @@ void setup() {
   Serial.println("PubNub set up");
 
   oldTime = 0;
-  feedbackTimer = 0;
   pingNow = 10000; // make sure to send a ping first :)
-  ledStatus = 0;
-  feedback = 0;
-  ping();
 }
 
 void loop() {
+  int latestRead = digitalRead(sensor);
+
+  // Only process counters once per second
   if((millis() - oldTime) > 1000) {
     oldTime = millis();
 
     ping();
-    if (feedback == 0) {
-      toggleLed();
+
+    Serial.println(latestRead, DEC);
+  
+    if (latestRead == HIGH) {
+      delay(100);
+  
+      if (state == LOW) {
+        Serial.println("Motion detected!"); 
+        state = HIGH;
+        createMessage(message, state);
+        publish(message);
+      }
+    } 
+    else {
+      delay(200);
+  
+      if (state == HIGH) {
+        Serial.println("Motion stopped!");
+        state = LOW;
+      }
     }
-  }
-
-  if ((millis() - feedbackTimer) > 200 && feedback > 0) {
-    toggleLed();
-    feedback--;
-  }
-}
-
-void toggleLed() {
-  if (ledStatus > 0) {
-    digitalWrite(LED_BUILTIN, LOW);
-    ledStatus = 0;
-  } else {
-    digitalWrite(LED_BUILTIN, HIGH);
-    ledStatus = 1;    
   }
 }
 
@@ -98,12 +98,18 @@ void ping() {
   pingNow++;
 }
 
-void createMessage(char* s, int usage) {
-  sprintf(s, "{\"usage\": \"%d\",\"source\": \"flowmeter\",\"type\": \"counter\",\"uptime\": \"%d\"}", usage, millis() / 1000);
+void createMessage(char* s, int state) {
+  char* detectedState;
+  if(state == HIGH) {
+    detectedState = "motion-detected";
+  } else {
+    detectedState = "motion-stopped";
+  }
+  sprintf(s, "{\"source\": \"motion\",\"type\": \"%s\",\"uptime\": \"%d\"}", detectedState, millis() / 1000);
 }
 
 void createPing(char* s) {
-  sprintf(s, "{\"source\": \"flowmeter\",\"type\": \"ping\",\"uptime\": \"%d\"}", millis() / 1000);
+  sprintf(s, "{\"source\": \"motion\",\"type\": \"ping\",\"uptime\": \"%d\"}", millis() / 1000);
 }
 
 void publish(char* msg) {
