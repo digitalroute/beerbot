@@ -2,7 +2,6 @@
 #define PubNub_BASE_CLIENT WiFiClient
 #define PUBNUB_DEFINE_STRSPN_AND_STRNCASECMP
 #include <PubNub.h>
-#include <aJSON.h>
 
 
 #define OPEN 0
