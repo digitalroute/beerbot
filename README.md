@@ -14,6 +14,24 @@ The biruinos are individually isolated, and are not directly connected to each o
 Sensors will typically read a sensor value and publish to PubNub, while actuators and the like will subscribe to command messages from PubNub and perform an action. Only the central controller logic will actually publish commands. The central controller logic runs in the cloud and is responsible for reading sensor values and publishing the appropriate commands back to PubNub.
 
 # Biruinos
+                                      ________________________          _____________________________
+    Serverless PaaS                  |Central controller logic|<======>| User & Consumption Database |
+                                      ------------------------          -----------------------------
+                                       ||                  /\
+                                       ||      Sensors (in)||
+                                       ||                  ||
+                        Commands (out) ||                  ||
+                                       \/                  ||
+         ________________________________________________________
+        |   PubNub channels                                      |
+         --------------------------------------------------------
+         ||            /\              /\              ||
+         ||            ||              ||              ||    
+         \/            ||              ||              \/
+     _________       _________       _________       _________
+    | valve   |     | rfid    |     | flow    |     | LEDs    |   Biruinos inside Beerbot
+     ---------       ---------       ---------       ---------
+
 * master valve - controls the flow of beer by opening or shutting an electric valve
 * rfid - reads rfid cards and publishes to pubnub
 * flow - flow meter measures the volume of beer consumed for each pour
