@@ -6,19 +6,22 @@
 #define PubNub_BASE_CLIENT WiFiClient
 #include <PubNub.h>
 #include "secrets.h"
-
+#include <string.h>
 ESP8266WiFiMulti WiFiMulti;
 
 const static char channel[] = "leds"; // channel to use
 
 char message[256];
+char lastReceived[256];
 
 volatile int pingNow;
 unsigned long oldTime;
 
-#define LED_PIN 13
+#define LED_PIN_HANDLE 13
+#define LED_PIN_WINDOW 12
 
-Adafruit_NeoPixel handleLEDs = Adafruit_NeoPixel(8, LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel handleLEDs = Adafruit_NeoPixel(8, LED_PIN_HANDLE, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel windowLEDs = Adafruit_NeoPixel(8, LED_PIN_WINDOW, NEO_GRB + NEO_KHZ800);
 
 void setup() {
   Serial.begin(115200);
@@ -49,17 +52,53 @@ void setup() {
 
   oldTime = 0;
   pingNow = 10000; // make sure to send a ping first :)
+  windowLEDs.begin();
+  windowLEDs.show();
+  handleLEDs.begin();
+  handleLEDs.show();
 }
+
+int flipCount = 0;
+long deadline = 0;
 
 void loop() {
 
   ping();
 
-
-  colorWipe(handleLEDs.Color(255, 0, 0), 50);
-
   pollPubNub();
 
+  doLeds();
+}
+
+void doLeds() {
+  if(strstr(lastReceived, "blue")) {
+    Serial.println("turn blue");
+    colorWipeHandle(handleLEDs.Color(0,0,255));
+    colorWipeWindow(windowLEDs.Color(0,0,255));
+  } else if(strstr(lastReceived, "red")) {
+    Serial.println("turn red");
+    colorWipeHandle(handleLEDs.Color(255,0,0));
+    colorWipeWindow(windowLEDs.Color(255,0,0));
+  } else {
+    Serial.println("nothing");
+  }
+  Serial.println("exit doleds");
+}
+
+void colorWipeHandle(uint32_t c) {
+  
+  for(uint16_t i=0; i<handleLEDs.numPixels(); i++) {
+    handleLEDs.setPixelColor(i, c);
+  }
+  handleLEDs.show();
+}
+
+void colorWipeWindow(uint32_t c) {
+  
+  for(uint16_t i=0; i<windowLEDs.numPixels(); i++) {
+    windowLEDs.setPixelColor(i, c);
+  }
+  windowLEDs.show();
 }
 
 void pollPubNub() {
@@ -68,23 +107,16 @@ void pollPubNub() {
 
   PubSubClient *sclient = PubNub.subscribe(channel);
   if (sclient != 0) {
+    int i = 0;
     while (sclient->wait_for_data(10)) {
-        Serial.write(sclient->read());
+      char achar = sclient->read();
+      Serial.write(achar);
+      lastReceived[i] = achar;
+      i++;
     }
+    lastReceived[i+1] = 0;
     sclient->stop();
   }
-
-  /*
-  client = PubNub.subscribe(channel);
-  if (!client) {
-    Serial.println("subscription error");
-    delay(1000);
-    return;
-  } else {
-    Serial.println("Message recieved");
-    client->stop();
-  }
-  */
 }
 
 void ping() {
@@ -98,12 +130,8 @@ void ping() {
   pingNow++;
 }
 
-void createMessage(char* s, int usage) {
-  sprintf(s, "{\"usage\": \"%d\",\"source\": \"rfid\",\"type\": \"counter\",\"uptime\": \"%d\"}", usage, millis() / 1000);
-}
-
 void createPing(char* s) {
-  sprintf(s, "{\"source\": \"rfid\",\"type\": \"ping\",\"uptime\": \"%d\"}", millis() / 1000);
+  sprintf(s, "{\"source\": \"leds\",\"type\": \"ping\",\"uptime\": \"%d\"}", millis() / 1000);
 }
 
 void publish(char* msg) {
@@ -126,20 +154,5 @@ void publish(char* msg) {
   client->stop();
   Serial.println("---");
   
-}
-
-// Fill the dots one after the other with a color
-void colorWipe(uint32_t c, uint8_t wait) {
-  for(uint16_t i=0; i<handleLEDs.numPixels(); i++) {
-    handleLEDs.setPixelColor(i, c);
-    handleLEDs.show();
-    delay(wait);
-  }
-}
-
-void colorPourProgress(uint16_t prog) {
-  //prog should be between 0-100 (%)
-  handleLEDs.numPixels();
-  //handleLEDs.setPixelColor(i, handleLEDs.Color(102, 51, 0)); 
 }
 
