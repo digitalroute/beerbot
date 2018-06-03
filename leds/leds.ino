@@ -6,26 +6,35 @@
 #define PubNub_BASE_CLIENT WiFiClient
 #include <PubNub.h>
 #include "secrets.h"
+#include "animation.h"
 #include <string.h>
 ESP8266WiFiMulti WiFiMulti;
 
 const static char channel[] = "leds"; // channel to use
 
+#define BUF_LEN 256
 char message[256];
-char lastReceived[256];
+char receiveBuffer[BUF_LEN];
+char* lastReceived;
 
 volatile int pingNow;
 unsigned long oldTime;
+unsigned int statusLed = LOW;
 
+#define LED_PIN_ONBOARD 2
 #define LED_PIN_HANDLE 13
 #define LED_PIN_WINDOW 12
 
-Adafruit_NeoPixel handleLEDs = Adafruit_NeoPixel(8, LED_PIN_HANDLE, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel windowLEDs = Adafruit_NeoPixel(8, LED_PIN_WINDOW, NEO_GRB + NEO_KHZ800);
+void HandleComplete();
+void WindowComplete();
+
+NeoPatterns handleLEDs(7, LED_PIN_HANDLE, NEO_GRB + NEO_KHZ800, &HandleComplete);
+NeoPatterns windowLEDs(8, LED_PIN_WINDOW, NEO_GRB + NEO_KHZ800, &WindowComplete);
 
 void setup() {
   Serial.begin(115200);
   delay(10);
+  oldTime = millis();
 
   // We start by connecting to a WiFi network
   WiFi.mode(WIFI_STA);
@@ -36,6 +45,7 @@ void setup() {
   Serial.print("Wait for WiFi... ");
 
   while(WiFiMulti.run() != WL_CONNECTED) {
+    updateStatusLed();
     Serial.print(".");
     delay(500);
   }
@@ -56,49 +66,58 @@ void setup() {
   windowLEDs.show();
   handleLEDs.begin();
   handleLEDs.show();
+
+  cli();
+  timer1_attachInterrupt(onTimerISR);
+  timer1_enable(TIM_DIV16, TIM_EDGE, TIM_SINGLE);
+  timer1_write(600000); //120000 us
+  sei();
+
+  lastReceived = "red";
 }
 
 int flipCount = 0;
 long deadline = 0;
 
+void onTimerISR() {
+
+  updateStatusLed();
+  handleLEDs.Update();
+  windowLEDs.Update();
+  timer1_write(600000);
+}
+
 void loop() {
+
+  doLeds();
 
   ping();
 
   pollPubNub();
-
-  doLeds();
 }
 
 void doLeds() {
   if(strstr(lastReceived, "blue")) {
     Serial.println("turn blue");
-    colorWipeHandle(handleLEDs.Color(0,0,255));
-    colorWipeWindow(windowLEDs.Color(0,0,255));
+    handleLEDs.TheaterChase(handleLEDs.Color(0,0,255), handleLEDs.Color(0,0,0), 300);
+    windowLEDs.TheaterChase(windowLEDs.Color(0,0,255), windowLEDs.Color(0,0,255), 300);
   } else if(strstr(lastReceived, "red")) {
     Serial.println("turn red");
-    colorWipeHandle(handleLEDs.Color(255,0,0));
-    colorWipeWindow(windowLEDs.Color(255,0,0));
+    handleLEDs.TheaterChase(handleLEDs.Color(255,0,0), handleLEDs.Color(255,0,0), 300);
+    windowLEDs.Scanner(windowLEDs.Color(255,0,0), 300);
   } else {
     Serial.println("nothing");
   }
   Serial.println("exit doleds");
 }
 
-void colorWipeHandle(uint32_t c) {
-  
-  for(uint16_t i=0; i<handleLEDs.numPixels(); i++) {
-    handleLEDs.setPixelColor(i, c);
+void updateStatusLed() {
+  unsigned long now = millis();
+  if(now - oldTime > 500) {
+    statusLed = !statusLed;
+    oldTime = now;
   }
-  handleLEDs.show();
-}
-
-void colorWipeWindow(uint32_t c) {
-  
-  for(uint16_t i=0; i<windowLEDs.numPixels(); i++) {
-    windowLEDs.setPixelColor(i, c);
-  }
-  windowLEDs.show();
+  digitalWrite(LED_PIN_ONBOARD, statusLed);
 }
 
 void pollPubNub() {
@@ -111,10 +130,13 @@ void pollPubNub() {
     while (sclient->wait_for_data(10)) {
       char achar = sclient->read();
       Serial.write(achar);
-      lastReceived[i] = achar;
+      if(i < BUF_LEN - 1) {
+        receiveBuffer[i] = achar;
+      }
       i++;
     }
-    lastReceived[i+1] = 0;
+    receiveBuffer[max(i+1, BUF_LEN - 1)] = 0;
+    lastReceived = receiveBuffer;
     sclient->stop();
   }
 }
@@ -155,4 +177,7 @@ void publish(char* msg) {
   Serial.println("---");
   
 }
+
+void WindowComplete() {};
+void HandleComplete() {};
 
