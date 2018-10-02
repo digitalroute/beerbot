@@ -80,6 +80,19 @@ void loop() {
     if (feedback == 0) {
       toggleLed();
     }
+
+    if (pulseCount > 0) {
+      createMessage(message, pulseCount, totalCount);
+      publish(message);
+      sendZeroUsage = 1;
+      pulseCount = 0;
+    } else {
+      if (sendZeroUsage > 0) {
+        createMessage(message, 0, totalCount);
+        publish(message);
+        sendZeroUsage = 0;
+      }
+    }
   }
 
   if ((millis() - feedbackTimer) > 200 && feedback > 0) {
@@ -87,21 +100,6 @@ void loop() {
     feedback--;
   }
 
-
-
-  if (pulseCount > 0) {
-    createMessage(message, pulseCount, totalCount);
-    publish(message);
-    sendZeroUsage = 1;
-  } else {
-    if (sendZeroUsage > 0) {
-      createMessage(message, 0, totalCount);
-      publish(message);
-      sendZeroUsage = 0;
-    }
-  }
-
-  
 }
 
 void toggleLed() {
