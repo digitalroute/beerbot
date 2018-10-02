@@ -17,8 +17,8 @@ const static char channel[] = "flow"; // channel to use
 
 char message[256];
 
-byte sensorPin = 0;  // input pin
-byte interruptPin = 0;
+byte sensorPin = 12;  // input pin
+//byte interruptPin = 2;
 volatile int pulseCount = 0;
 unsigned long totalCount = 0;
 int sendZeroUsage = 0;
@@ -66,8 +66,10 @@ void setup() {
   feedback = 0;
   ping();
 
-  pinMode(sensorPin, INPUT);
-  attachInterrupt(interruptPin, pulseCounter, FALLING);
+  pinMode(sensorPin, INPUT_PULLUP);
+  digitalWrite(sensorPin, HIGH);
+  //attachInterrupt(interruptPin, pulseCounter, FALLING);
+  attachInterrupt(digitalPinToInterrupt(sensorPin), pulseCounter, FALLING);
 }
 
 void loop() {
@@ -123,7 +125,7 @@ void ping() {
   pingNow++;
 }
 
-void createMessage(char* s, int usage) {
+void createMessage(char* s, int usage, int total) {
   sprintf(s, "{\"usage\": \"%d\",\"source\": \"flowmeter\",\"type\": \"counter\",\"uptime\": \"%d\"}", usage, millis() / 1000);
 }
 
@@ -156,5 +158,7 @@ void publish(char* msg) {
 void pulseCounter() {
   pulseCount++;
   totalCount++;
-}
-
+  Serial.print("pulse ");
+  Serial.print(pulseCount);
+  Serial.println("");
+ }
