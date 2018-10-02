@@ -152,13 +152,12 @@ void publish(char* msg) {
   }
   client->stop();
   Serial.println("---");
-  
 }
 
 void pulseCounter() {
   pulseCount++;
   totalCount++;
-  Serial.print("pulse ");
-  Serial.print(pulseCount);
-  Serial.println("");
+  //Serial.print("pulse ");
+  //Serial.print(pulseCount);
+  //Serial.println("");
  }
