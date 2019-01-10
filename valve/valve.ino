@@ -17,8 +17,8 @@ char* lastReceived = "open";
 
 int ledStatus = 0;
 
-#define VALVE_PIN_OPEN 0
-#define VALVE_PIN_CLOSE 2
+#define VALVE_PIN_OPEN 12
+#define VALVE_PIN_CLOSE 13
 
 void setup() {
   Serial.begin(115200);
@@ -82,8 +82,8 @@ void handleValve() {
 
 void openValve() {
   Serial.println("Opening valve");
-  digitalWrite(VALVE_PIN_CLOSE, LOW);                              
-  delay(200);                    
+  digitalWrite(VALVE_PIN_CLOSE, LOW);
+  delay(200);
   digitalWrite(VALVE_PIN_OPEN, HIGH);
   ledWait(4);
   digitalWrite(VALVE_PIN_OPEN, LOW);
@@ -92,8 +92,8 @@ void openValve() {
 
 void closeValve() {
   Serial.println("Closing valve");
-  digitalWrite(VALVE_PIN_OPEN, LOW);                              
-  delay(200);                    
+  digitalWrite(VALVE_PIN_OPEN, LOW);
+  delay(200);
   digitalWrite(VALVE_PIN_CLOSE, HIGH);
   ledWait(4);
   digitalWrite(VALVE_PIN_CLOSE, LOW);
