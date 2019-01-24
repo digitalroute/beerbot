@@ -19,6 +19,8 @@ int ledStatus = 0;
 
 #define VALVE_PIN_OPEN 12
 #define VALVE_PIN_CLOSE 13
+#define LED_PIN_OPEN 4
+#define LED_PIN_CLOSE 5
 
 void setup() {
   Serial.begin(115200);
@@ -27,6 +29,13 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(VALVE_PIN_OPEN, OUTPUT);
   pinMode(VALVE_PIN_CLOSE, OUTPUT);
+  pinMode(LED_PIN_OPEN, OUTPUT);
+  pinMode(LED_PIN_CLOSE, OUTPUT);
+
+  digitalWrite(VALVE_PIN_OPEN, LOW);
+  digitalWrite(VALVE_PIN_CLOSE, LOW);
+  digitalWrite(LED_PIN_OPEN, LOW);
+  digitalWrite(LED_PIN_CLOSE, LOW);
   
   // We start by connecting to a WiFi network
   WiFi.mode(WIFI_STA);
@@ -69,11 +78,11 @@ void handleValve() {
   if(strstr(lastReceived, "open")) {
     turnLedOn(10);
     openValve();
-    ledWait(8);
+    ledWait(2);
   } else if(strstr(lastReceived, "close")) {
     turnLedOff(10);
     closeValve();
-    ledWait(8);
+    ledWait(2);
   } else {
     blinkLed(5);
     Serial.println("Command was not open or close");
@@ -83,9 +92,8 @@ void handleValve() {
 void openValve() {
   Serial.println("Opening valve");
   digitalWrite(VALVE_PIN_CLOSE, LOW);
-  delay(200);
   digitalWrite(VALVE_PIN_OPEN, HIGH);
-  ledWait(4);
+  ledWait(5);
   digitalWrite(VALVE_PIN_OPEN, LOW);
   Serial.println("Opened");
 }
@@ -93,9 +101,8 @@ void openValve() {
 void closeValve() {
   Serial.println("Closing valve");
   digitalWrite(VALVE_PIN_OPEN, LOW);
-  delay(200);
   digitalWrite(VALVE_PIN_CLOSE, HIGH);
-  ledWait(4);
+  ledWait(5);
   digitalWrite(VALVE_PIN_CLOSE, LOW);
   Serial.println("Closed");
 }
