@@ -19,8 +19,8 @@ int ledStatus = 0;
 
 #define VALVE_PIN_OPEN 12
 #define VALVE_PIN_CLOSE 13
-#define LED_PIN_OPEN 4
-#define LED_PIN_CLOSE 5
+#define LED_PIN_OPEN 5
+#define LED_PIN_CLOSE 4
 
 void setup() {
   Serial.begin(115200);
