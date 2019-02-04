@@ -61,7 +61,7 @@ void setup() {
   PubNub.begin(SECRET_PUBKEY, SECRET_SUBKEY);
   Serial.println("PubNub set up");
 
-  ping();
+  sendBootMessage();
 
   turnLedOn(5);
 }
@@ -201,6 +201,16 @@ void ping() {
 
 void createPing(char* s) {
   sprintf(s, "{\"source\": \"valve\",\"type\": \"ping\",\"uptime\": \"%d\"}", millis() / 1000);
+}
+
+void sendBootMessage() {
+  Serial.println("Sending boot message");
+  createBootMessage(message);
+  publish(message);
+}
+
+void createBootMessage(char* s) {
+  sprintf(s, "{\"source\": \"valve\",\"type\": \"boot\",\"uptime\": \"%d\"}", millis() / 1000);
 }
 
 void publish(char* msg) {
