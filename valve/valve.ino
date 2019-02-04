@@ -76,13 +76,9 @@ void handleValve() {
   Serial.print("lastReceived: ");
   Serial.println(lastReceived);
   if(strstr(lastReceived, "open")) {
-    turnLedOn(10);
     openValve();
-    ledWait(2);
   } else if(strstr(lastReceived, "close")) {
-    turnLedOff(10);
     closeValve();
-    ledWait(2);
   } else {
     blinkLed(5);
     Serial.println("Command was not open or close");
@@ -95,7 +91,8 @@ void openValve() {
   digitalWrite(LED_PIN_CLOSE, LOW);
   digitalWrite(VALVE_PIN_CLOSE, LOW);
   digitalWrite(VALVE_PIN_OPEN, HIGH);
-  ledWait(5);
+  turnLedOff(10);
+  ledWait(4);
   digitalWrite(VALVE_PIN_OPEN, LOW);
   digitalWrite(LED_PIN_OPEN, HIGH);
   digitalWrite(LED_PIN_CLOSE, LOW);
@@ -108,7 +105,8 @@ void closeValve() {
   digitalWrite(LED_PIN_CLOSE, LOW);
   digitalWrite(VALVE_PIN_OPEN, LOW);
   digitalWrite(VALVE_PIN_CLOSE, HIGH);
-  ledWait(5);
+  turnLedOn(10);
+  ledWait(4);
   digitalWrite(VALVE_PIN_CLOSE, LOW);
   digitalWrite(LED_PIN_OPEN, LOW);
   digitalWrite(LED_PIN_CLOSE, HIGH);
