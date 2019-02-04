@@ -91,19 +91,27 @@ void handleValve() {
 
 void openValve() {
   Serial.println("Opening valve");
+  digitalWrite(LED_PIN_OPEN, LOW);
+  digitalWrite(LED_PIN_CLOSE, LOW);
   digitalWrite(VALVE_PIN_CLOSE, LOW);
   digitalWrite(VALVE_PIN_OPEN, HIGH);
   ledWait(5);
   digitalWrite(VALVE_PIN_OPEN, LOW);
+  digitalWrite(LED_PIN_OPEN, HIGH);
+  digitalWrite(LED_PIN_CLOSE, LOW);
   Serial.println("Opened");
 }
 
 void closeValve() {
   Serial.println("Closing valve");
+  digitalWrite(LED_PIN_OPEN, LOW);
+  digitalWrite(LED_PIN_CLOSE, LOW);
   digitalWrite(VALVE_PIN_OPEN, LOW);
   digitalWrite(VALVE_PIN_CLOSE, HIGH);
   ledWait(5);
   digitalWrite(VALVE_PIN_CLOSE, LOW);
+  digitalWrite(LED_PIN_OPEN, LOW);
+  digitalWrite(LED_PIN_CLOSE, HIGH);
   Serial.println("Closed");
 }
 
