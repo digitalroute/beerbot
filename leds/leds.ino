@@ -187,10 +187,11 @@ void publish(char* msg) {
 void WindowComplete() {};
 void HandleComplete() {};
 
-// ;scanner;window;r;g;b;
+// ;scanner;window;i;r;g;b;
 void doScanner() {
   char program[32] = {0};
   char placement[32] = {0};
+  int i = 0;
   int r = 0;
   int g = 0;
   int b = 0;
@@ -203,6 +204,8 @@ void doScanner() {
   strtokIndx = strtok(NULL, ";");        // ;window;
   strcpy(placement, strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;r;
+  i = atoi(strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;r;
   r = atoi(strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;g;
   g = atoi(strtokIndx);
@@ -213,6 +216,8 @@ void doScanner() {
   Serial.println(program);
   Serial.print("placement: ");
   Serial.println(placement);
+  Serial.print("i: ");
+  Serial.println(i);
   Serial.print("r: ");
   Serial.println(r);
   Serial.print("g: ");
@@ -222,10 +227,10 @@ void doScanner() {
 
   if (strstr(placement, "handle")) {
     Serial.println("scanner: handle");
-    handleLEDs.Scanner(handleLEDs.Color(r,g,b), 300);
+    handleLEDs.Scanner(handleLEDs.Color(r,g,b), i);
   } else if (strstr(placement, "window")) {
     Serial.println("scanner: window");
-    windowLEDs.Scanner(windowLEDs.Color(r,g,b), 300);
+    windowLEDs.Scanner(windowLEDs.Color(r,g,b), i);
   } else {
     Serial.println("scanner: placement not found");      
   }
