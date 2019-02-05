@@ -110,6 +110,8 @@ void doLeds() {
     windowLEDs.Scanner(windowLEDs.Color(255,0,0), 300);
   } else if(strstr(lastReceived, "scanner")) {
     doScanner();
+  } else if(strstr(lastReceived, "theaterchase")) {
+    doTheaterChase();
   } else {
     Serial.println("nothing");
   }
@@ -233,5 +235,72 @@ void doScanner() {
     windowLEDs.Scanner(windowLEDs.Color(r,g,b), i);
   } else {
     Serial.println("scanner: placement not found");      
+  }
+};
+
+
+// ;scanner;window;i;r;g;b;
+void doTheaterChase() {
+  char program[32] = {0};
+  char placement[32] = {0};
+  int i = 0;
+  int r_1 = 0;
+  int g_1 = 0;
+  int b_1 = 0;
+  int r_2 = 0;
+  int g_2 = 0;
+  int b_2 = 0;
+
+  char *strtokIndx; // this is used by strtok() as an index
+
+  strtokIndx = strtok(lastReceived,";"); // part before ;scanner
+  strtokIndx = strtok(NULL, ";");        // ;scanner;
+  strcpy(program, strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;window;
+  strcpy(placement, strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;r;
+  i = atoi(strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;r;
+  r_1 = atoi(strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;g;
+  g_1 = atoi(strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;b;
+  b_1 = atoi(strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;r;
+  r_2 = atoi(strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;g;
+  g_2 = atoi(strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;b;
+  b_2 = atoi(strtokIndx);
+
+  Serial.print("program: ");
+  Serial.println(program);
+  Serial.print("placement: ");
+  Serial.println(placement);
+  Serial.print("i: ");
+  Serial.println(i);
+  Serial.print("r_1: ");
+  Serial.println(r_1);
+  Serial.print("g_1: ");
+  Serial.println(g_1);
+  Serial.print("b_1: ");
+  Serial.println(b_1);
+  Serial.print("r_2: ");
+  Serial.println(r_2);
+  Serial.print("g_2: ");
+  Serial.println(g_2);
+  Serial.print("b_2: ");
+  Serial.println(b_2);
+
+  if (strstr(placement, "handle")) {
+    Serial.println("theaterchase: handle");
+    handleLEDs.TheaterChase(handleLEDs.Color(r_1,g_1,b_1), handleLEDs.Color(r_2,g_2,b_2), 300);
+    // handleLEDs.Scanner(handleLEDs.Color(r,g,b), i);
+  } else if (strstr(placement, "window")) {
+    Serial.println("theaterchase: window");
+    //windowLEDs.Scanner(windowLEDs.Color(r,g,b), i);
+    windowLEDs.TheaterChase(windowLEDs.Color(r_1,g_1,b_1), windowLEDs.Color(r_2,g_2,b_2), 300);
+  } else {
+    Serial.println("theaterchase: placement not found");      
   }
 };
