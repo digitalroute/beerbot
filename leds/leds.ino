@@ -108,6 +108,8 @@ void doLeds() {
     Serial.println("turn red");
     handleLEDs.TheaterChase(handleLEDs.Color(255,0,0), handleLEDs.Color(255,0,0), 300);
     windowLEDs.Scanner(windowLEDs.Color(255,0,0), 300);
+  } else if(strstr(lastReceived, "scanner")) {
+    doScanner();
   } else {
     Serial.println("nothing");
   }
@@ -185,3 +187,46 @@ void publish(char* msg) {
 void WindowComplete() {};
 void HandleComplete() {};
 
+// ;scanner;window;r;g;b;
+void doScanner() {
+  char program[32] = {0};
+  char placement[32] = {0};
+  int r = 0;
+  int g = 0;
+  int b = 0;
+
+  char *strtokIndx; // this is used by strtok() as an index
+
+  strtokIndx = strtok(lastReceived,";"); // part before ;scanner
+  strtokIndx = strtok(NULL, ";");        // ;scanner;
+  strcpy(program, strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;window;
+  strcpy(placement, strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;r;
+  r = atoi(strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;g;
+  g = atoi(strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;b;
+  b = atoi(strtokIndx);
+
+  Serial.print("program: ");
+  Serial.println(program);
+  Serial.print("placement: ");
+  Serial.println(placement);
+  Serial.print("r: ");
+  Serial.println(r);
+  Serial.print("g: ");
+  Serial.println(g);
+  Serial.print("b: ");
+  Serial.println(b);
+
+  if (strstr(placement, "handle")) {
+    Serial.println("scanner: handle");
+    handleLEDs.Scanner(handleLEDs.Color(r,g,b), 300);
+  } else if (strstr(placement, "window")) {
+    Serial.println("scanner: window");
+    windowLEDs.Scanner(windowLEDs.Color(r,g,b), 300);
+  } else {
+    Serial.println("scanner: placement not found");      
+  }
+};
