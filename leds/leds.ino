@@ -97,6 +97,9 @@ void loop() {
 }
 
 void doLeds() {
+  Serial.print("entering doLeds with: ");
+  Serial.print(lastReceived);
+  Serial.println("");
   if(strstr(lastReceived, "blue")) {
     Serial.println("turn blue");
     handleLEDs.TheaterChase(handleLEDs.Color(0,0,255), handleLEDs.Color(0,0,0), 300);
@@ -139,6 +142,7 @@ void pollPubNub() {
     lastReceived = receiveBuffer;
     sclient->stop();
   }
+  Serial.println("");
 }
 
 void ping() {
