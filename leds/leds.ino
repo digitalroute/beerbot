@@ -85,7 +85,7 @@ void onTimerISR() {
   updateStatusLed();
   handleLEDs.Update();
   windowLEDs.Update();
-  timer1_write(600000);
+  timer1_write(TIMER_TICKS);
 }
 
 void loop() {
@@ -196,7 +196,7 @@ void HandleComplete() {};
 void doScanner() {
   char program[32] = {0};
   char placement[32] = {0};
-  int i = 0;
+  unsigned long i = 0;
   int r = 0;
   int g = 0;
   int b = 0;
@@ -213,7 +213,7 @@ void doScanner() {
   strcpy(placement, strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;r;
   if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
-  i = atoi(strtokIndx);
+  i = atol(strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;r;
   if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   r = atoi(strtokIndx);
@@ -253,7 +253,7 @@ void doScanner() {
 void doTheaterChase() {
   char program[32] = {0};
   char placement[32] = {0};
-  int i = 0;
+  unsigned long i = 0;
   int r_1 = 0;
   int g_1 = 0;
   int b_1 = 0;
@@ -273,7 +273,7 @@ void doTheaterChase() {
   strcpy(placement, strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;r;
   if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
-  i = atoi(strtokIndx);
+  i = atol(strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;r;
   if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   r_1 = atoi(strtokIndx);
@@ -314,12 +314,12 @@ void doTheaterChase() {
 
   if (strstr(placement, "handle")) {
     Serial.println("theaterchase: handle");
-    handleLEDs.TheaterChase(handleLEDs.Color(r_1,g_1,b_1), handleLEDs.Color(r_2,g_2,b_2), 300);
+    handleLEDs.TheaterChase(handleLEDs.Color(r_1,g_1,b_1), handleLEDs.Color(r_2,g_2,b_2), i);
     // handleLEDs.Scanner(handleLEDs.Color(r,g,b), i);
   } else if (strstr(placement, "window")) {
     Serial.println("theaterchase: window");
     //windowLEDs.Scanner(windowLEDs.Color(r,g,b), i);
-    windowLEDs.TheaterChase(windowLEDs.Color(r_1,g_1,b_1), windowLEDs.Color(r_2,g_2,b_2), 300);
+    windowLEDs.TheaterChase(windowLEDs.Color(r_1,g_1,b_1), windowLEDs.Color(r_2,g_2,b_2), i);
   } else {
     Serial.println("theaterchase: placement not found");      
   }
@@ -330,7 +330,7 @@ void doTheaterChase() {
 void doRainbow() {
   char program[32] = {0};
   char placement[32] = {0};
-  int i = 0;
+  unsigned long i = 0;
 
   char *strtokIndx; // this is used by strtok() as an index
 
@@ -344,7 +344,7 @@ void doRainbow() {
   strcpy(placement, strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;r;
   if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
-  i = atoi(strtokIndx);
+  i = atol(strtokIndx);
 
   Serial.print("program: ");
   Serial.println(program);
