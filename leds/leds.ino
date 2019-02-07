@@ -204,19 +204,26 @@ void doScanner() {
   char *strtokIndx; // this is used by strtok() as an index
 
   strtokIndx = strtok(lastReceived,";"); // part before ;scanner
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   strtokIndx = strtok(NULL, ";");        // ;scanner;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   strcpy(program, strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;window;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   strcpy(placement, strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;r;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   i = atoi(strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;r;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   r = atoi(strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;g;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   g = atoi(strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;b;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   b = atoi(strtokIndx);
-
+  
   Serial.print("program: ");
   Serial.println(program);
   Serial.print("placement: ");
@@ -257,23 +264,33 @@ void doTheaterChase() {
   char *strtokIndx; // this is used by strtok() as an index
 
   strtokIndx = strtok(lastReceived,";"); // part before ;scanner
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   strtokIndx = strtok(NULL, ";");        // ;scanner;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   strcpy(program, strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;window;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   strcpy(placement, strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;r;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   i = atoi(strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;r;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   r_1 = atoi(strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;g;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   g_1 = atoi(strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;b;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   b_1 = atoi(strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;r;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   r_2 = atoi(strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;g;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   g_2 = atoi(strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;b;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   b_2 = atoi(strtokIndx);
 
   Serial.print("program: ");
@@ -318,11 +335,15 @@ void doRainbow() {
   char *strtokIndx; // this is used by strtok() as an index
 
   strtokIndx = strtok(lastReceived,";"); // part before ;scanner
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   strtokIndx = strtok(NULL, ";");        // ;scanner;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   strcpy(program, strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;window;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   strcpy(placement, strtokIndx);
   strtokIndx = strtok(NULL, ";");        // ;r;
+  if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   i = atoi(strtokIndx);
 
   Serial.print("program: ");
