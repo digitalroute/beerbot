@@ -101,7 +101,13 @@ void doLeds() {
   Serial.print("entering doLeds with: ");
   Serial.print(lastReceived);
   Serial.println("");
-  if(strstr(lastReceived, "blue")) {
+  if(strstr(lastReceived, "scanner")) {
+    doScanner();
+  } else if(strstr(lastReceived, "theaterchase")) {
+    doTheaterChase();
+  } else if(strstr(lastReceived, "rainbow")) {
+    doRainbow();
+  } else if(strstr(lastReceived, "blue")) {
     Serial.println("turn blue");
     handleLEDs.TheaterChase(handleLEDs.Color(0,0,255), handleLEDs.Color(0,0,0), 300);
     windowLEDs.TheaterChase(windowLEDs.Color(0,0,255), windowLEDs.Color(0,0,255), 300);
@@ -109,10 +115,6 @@ void doLeds() {
     Serial.println("turn red");
     handleLEDs.TheaterChase(handleLEDs.Color(255,0,0), handleLEDs.Color(255,0,0), 300);
     windowLEDs.Scanner(windowLEDs.Color(255,0,0), 300);
-  } else if(strstr(lastReceived, "scanner")) {
-    doScanner();
-  } else if(strstr(lastReceived, "theaterchase")) {
-    doTheaterChase();
   } else {
     Serial.println("nothing");
   }
@@ -303,5 +305,40 @@ void doTheaterChase() {
     windowLEDs.TheaterChase(windowLEDs.Color(r_1,g_1,b_1), windowLEDs.Color(r_2,g_2,b_2), 300);
   } else {
     Serial.println("theaterchase: placement not found");      
+  }
+};
+
+
+// ;scanner;window;i;r;g;b;
+void doRainbow() {
+  char program[32] = {0};
+  char placement[32] = {0};
+  int i = 0;
+
+  char *strtokIndx; // this is used by strtok() as an index
+
+  strtokIndx = strtok(lastReceived,";"); // part before ;scanner
+  strtokIndx = strtok(NULL, ";");        // ;scanner;
+  strcpy(program, strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;window;
+  strcpy(placement, strtokIndx);
+  strtokIndx = strtok(NULL, ";");        // ;r;
+  i = atoi(strtokIndx);
+
+  Serial.print("program: ");
+  Serial.println(program);
+  Serial.print("placement: ");
+  Serial.println(placement);
+  Serial.print("i: ");
+  Serial.println(i);
+
+  if (strstr(placement, "handle")) {
+    Serial.println("rainbow: handle");
+    handleLEDs.RainbowCycle(i);
+  } else if (strstr(placement, "window")) {
+    Serial.println("rainbow: window");
+    windowLEDs.RainbowCycle(i);
+  } else {
+    Serial.println("rainbow: placement not found");      
   }
 };
