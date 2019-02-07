@@ -8,6 +8,15 @@
 #include <string.h>
 ESP8266WiFiMulti WiFiMulti;
 
+#define VALVE_PIN_OPEN 12
+#define VALVE_PIN_CLOSE 13
+#define LED_PIN_OPEN 5
+#define LED_PIN_CLOSE 4
+
+#define DEFAULT_LED_FREQUENCY 25
+#define OPEN_CLOSE_LED_FREQUENCY 5
+#define BLINK_LED_FREQUENCY 2
+
 const static char channel[] = "valve"; // channel to use
 
 #define BUF_LEN 256
@@ -16,11 +25,8 @@ char receiveBuffer[BUF_LEN];
 char* lastReceived = "open";
 
 int ledStatus = 0;
-
-#define VALVE_PIN_OPEN 12
-#define VALVE_PIN_CLOSE 13
-#define LED_PIN_OPEN 5
-#define LED_PIN_CLOSE 4
+int ledFrequencyCounter = 0;
+int ledFrequency = DEFAULT_LED_FREQUENCY; // wait 10 ticks to toggle led
 
 void setup() {
   Serial.begin(115200);
@@ -63,7 +69,21 @@ void setup() {
 
   sendBootMessage();
 
-  turnLedOn(5);
+  cli();
+  timer1_attachInterrupt(onTimerISR);
+  timer1_enable(TIM_DIV16, TIM_EDGE, TIM_SINGLE);
+  timer1_write(100000); //120000 us
+  sei();
+}
+
+void onTimerISR() {
+  if (ledFrequencyCounter > ledFrequency) {
+    toggleLed();
+    ledFrequencyCounter = 0;
+  } else {
+    ledFrequencyCounter++;
+  }
+  timer1_write(100000);
 }
 
 void loop() {
@@ -80,9 +100,9 @@ void handleValve() {
   } else if(strstr(lastReceived, "close")) {
     closeValve();
   } else {
-    blinkLed(5);
+    // blinkLed(5);
     Serial.println("Command was not open or close");
-  }  
+  }
 }
 
 void openValve() {
@@ -91,8 +111,7 @@ void openValve() {
   digitalWrite(LED_PIN_CLOSE, LOW);
   digitalWrite(VALVE_PIN_CLOSE, LOW);
   digitalWrite(VALVE_PIN_OPEN, HIGH);
-  turnLedOff(10);
-  ledWait(4);
+  ledWait(5);
   digitalWrite(VALVE_PIN_OPEN, LOW);
   digitalWrite(LED_PIN_OPEN, HIGH);
   digitalWrite(LED_PIN_CLOSE, LOW);
@@ -105,58 +124,23 @@ void closeValve() {
   digitalWrite(LED_PIN_CLOSE, LOW);
   digitalWrite(VALVE_PIN_OPEN, LOW);
   digitalWrite(VALVE_PIN_CLOSE, HIGH);
-  turnLedOn(10);
-  ledWait(4);
+  ledWait(5);
   digitalWrite(VALVE_PIN_CLOSE, LOW);
   digitalWrite(LED_PIN_OPEN, LOW);
   digitalWrite(LED_PIN_CLOSE, HIGH);
   Serial.println("Closed");
 }
 
-void turnLedOn(int n) {
-  for (int i=0; i <= n; i++) {
-    toggleLed();
-    delay(100);
-  }
-  if (ledStatus == 0) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    ledStatus = 1;
-  }
-}
-
-void turnLedOff(int n) {
-  for (int i=0; i <= n; i++) {
-    toggleLed();
-    delay(100);
-  }
-  if (ledStatus > 0) {
-    digitalWrite(LED_BUILTIN, LOW);
-    ledStatus = 0;
-  }
-}
-
 void blinkLed(int n) {
-  int oldLedStatus = ledStatus;
-  for (int i=0; i <= n; i++) {
-    toggleLed();
-    delay(100);
-  }
-  if (oldLedStatus > 0) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    ledStatus = 1;
-  } else {
-    digitalWrite(LED_BUILTIN, LOW);
-    ledStatus = 0;
-  }
+  ledFrequency = BLINK_LED_FREQUENCY;
+  delay(n * 100);
+  ledFrequency = DEFAULT_LED_FREQUENCY;
 }
 
 void ledWait(int seconds) {
-  for (int i=0; i <= seconds; i++) {
-    toggleLed();
-    delay(500);
-    toggleLed();
-    delay(500);
-  }
+  ledFrequency = OPEN_CLOSE_LED_FREQUENCY;
+  delay(seconds * 1000);
+  ledFrequency = DEFAULT_LED_FREQUENCY;
 }
 
 void toggleLed() {
