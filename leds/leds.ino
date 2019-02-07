@@ -76,7 +76,7 @@ void setup() {
   timer1_write(TIMER_TICKS);
   sei();
 
-  lastReceived = "red";
+  lastReceived = "bootcolor";
 }
 
 int flipCount = 0;
@@ -109,14 +109,10 @@ void doLeds() {
     doTheaterChase();
   } else if(strstr(lastReceived, "rainbow")) {
     doRainbow();
-  } else if(strstr(lastReceived, "blue")) {
-    Serial.println("turn blue");
-    handleLEDs.TheaterChase(handleLEDs.Color(0,0,255), handleLEDs.Color(0,0,0), 300);
-    windowLEDs.TheaterChase(windowLEDs.Color(0,0,255), windowLEDs.Color(0,0,255), 300);
-  } else if(strstr(lastReceived, "red")) {
-    Serial.println("turn red");
-    handleLEDs.TheaterChase(handleLEDs.Color(255,0,0), handleLEDs.Color(255,0,0), 300);
-    windowLEDs.Scanner(windowLEDs.Color(255,0,0), 300);
+  } else if(strstr(lastReceived, "bootcolor")) {
+    Serial.println("turn bootcolor");
+    handleLEDs.RainbowCycle(5);
+    windowLEDs.RainbowCycle(5);
   } else {
     Serial.println("nothing");
   }
