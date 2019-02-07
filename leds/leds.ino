@@ -24,6 +24,8 @@ unsigned int statusLed = LOW;
 #define LED_PIN_HANDLE 13
 #define LED_PIN_WINDOW 12
 
+#define TIMER_TICKS 10000
+
 void HandleComplete();
 void WindowComplete();
 
@@ -71,7 +73,7 @@ void setup() {
   cli();
   timer1_attachInterrupt(onTimerISR);
   timer1_enable(TIM_DIV16, TIM_EDGE, TIM_SINGLE);
-  timer1_write(600000); //120000 us
+  timer1_write(TIMER_TICKS);
   sei();
 
   lastReceived = "red";
