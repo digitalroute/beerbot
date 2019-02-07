@@ -21,7 +21,6 @@ volatile int pingNow;
 unsigned long oldTime;
 unsigned int statusLed = LOW;
 
-#define LED_PIN_ONBOARD 2
 #define LED_PIN_HANDLE 13
 #define LED_PIN_WINDOW 12
 
@@ -36,6 +35,8 @@ void setup() {
   delay(10);
   oldTime = millis();
 
+  pinMode(LED_BUILTIN, OUTPUT);
+  
   // We start by connecting to a WiFi network
   WiFi.mode(WIFI_STA);
   WiFiMulti.addAP(SECRET_SSID, SECRET_SSID_PASSWORD);
@@ -123,8 +124,8 @@ void updateStatusLed() {
   if(now - oldTime > 500) {
     statusLed = !statusLed;
     oldTime = now;
+    digitalWrite(LED_BUILTIN, statusLed);
   }
-  digitalWrite(LED_PIN_ONBOARD, statusLed);
 }
 
 void pollPubNub() {
