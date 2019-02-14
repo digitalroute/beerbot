@@ -13,7 +13,9 @@
 
 ESP8266WiFiMulti WiFiMulti;
 
-const static char channel[] = "flow"; // channel to use
+const static char pubNubId[] = "flowmeter";
+const static char channelSend[] = "flow";
+const static char channelPing[] = "ping";
 
 char message[256];
 
@@ -23,7 +25,7 @@ volatile int pulseCount = 0;
 unsigned long totalCount = 0;
 int sendZeroUsage = 0;
 
-volatile int pingNow;
+volatile int aliveNow;
 unsigned long oldTime;
 unsigned long feedbackTimer;
 int ledStatus;
@@ -45,8 +47,9 @@ void setup() {
   Serial.print("Wait for WiFi... ");
 
   while(WiFiMulti.run() != WL_CONNECTED) {
+    toggleLed();
     Serial.print(".");
-    delay(500);
+    delay(100);
   }
 
   Serial.println("");
@@ -61,10 +64,10 @@ void setup() {
 
   oldTime = 0;
   feedbackTimer = 0;
-  pingNow = 10000; // make sure to send a ping first :)
-  ledStatus = 0;
+  aliveNow = 0;
+ ledStatus = 0;
   feedback = 0;
-  ping();
+  sendBoot();
 
   pinMode(sensorPin, INPUT_PULLUP);
   digitalWrite(sensorPin, HIGH);
@@ -76,20 +79,20 @@ void loop() {
   if((millis() - oldTime) > 1000) {
     oldTime = millis();
 
-    ping();
+    sendAlive();
     if (feedback == 0) {
       toggleLed();
     }
 
     if (pulseCount > 0) {
       createMessage(message, pulseCount, totalCount);
-      publish(message);
+      publish(message, channelSend);
       sendZeroUsage = 1;
       pulseCount = 0;
     } else {
       if (sendZeroUsage > 0) {
         createMessage(message, 0, totalCount);
-        publish(message);
+        publish(message, channelSend);
         sendZeroUsage = 0;
       }
     }
@@ -112,29 +115,39 @@ void toggleLed() {
   }
 }
 
-void ping() {
-  if (pingNow >= 30) {
-    Serial.println("Sending ping");
-    createPing(message);
-    publish(message);
-    pingNow = 0;
+void sendBoot() {
+  Serial.println("Sending boot");
+  createBootMessage(message);
+  publish(message, channelPing);
+}
+
+void createBootMessage(char* s) {
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"boot\",\"uptime\": \"%d\"}", pubNubId, millis() / 1000);
+}
+
+void sendAlive() {
+  if (aliveNow >= 30) {
+    Serial.println("Sending alive");
+    createAlive(message);
+    publish(message, channelPing);
+    aliveNow = 0;
   }
-  
-  pingNow++;
+
+  aliveNow++;
+}
+
+void createAlive(char* s) {
+  sprintf(s, "{\"source\": \"%s\",\"total\": \"%d\",\"type\": \"alive\",\"uptime\": \"%d\"}", pubNubId, totalCount, millis() / 1000);
 }
 
 void createMessage(char* s, int usage, int total) {
-  sprintf(s, "{\"usage\": \"%d\",\"source\": \"flowmeter\",\"type\": \"counter\",\"uptime\": \"%d\"}", usage, millis() / 1000);
+  sprintf(s, "{\"source\": \"%s\",\"usage\": \"%d\",\"total\": \"%d\",\"type\": \"counter\",\"uptime\": \"%d\"}", pubNubId, usage, total, millis() / 1000);
 }
 
-void createPing(char* s) {
-  sprintf(s, "{\"source\": \"flowmeter\",\"type\": \"ping\",\"uptime\": \"%d\"}", millis() / 1000);
-}
-
-void publish(char* msg) {
+void publish(char* msg, const char* chnl) {
   WiFiClient *client;
   
-  client = PubNub.publish(channel, msg);
+  client = PubNub.publish(chnl, msg);
 
   if (!client) {
     //Serial.println("publishing error");
