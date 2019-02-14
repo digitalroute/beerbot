@@ -10,14 +10,15 @@
 #include <string.h>
 ESP8266WiFiMulti WiFiMulti;
 
-const static char channel[] = "leds"; // channel to use
+const static char pubNubId[] = "leds";
+const static char channelListen[] = "leds";
+const static char channelPing[] = "ping";
 
 #define BUF_LEN 256
 char message[256];
 char receiveBuffer[BUF_LEN];
 char* lastReceived;
 
-volatile int pingNow;
 unsigned long oldTime;
 unsigned int statusLed = LOW;
 
@@ -48,9 +49,9 @@ void setup() {
   Serial.print("Wait for WiFi... ");
 
   while(WiFiMulti.run() != WL_CONNECTED) {
-    updateStatusLed();
+    toggleStatusLed();
     Serial.print(".");
-    delay(500);
+    delay(100);
   }
 
   Serial.println("");
@@ -61,10 +62,10 @@ void setup() {
   delay(500);
 
   PubNub.begin(SECRET_PUBKEY, SECRET_SUBKEY);
+  PubNub.set_uuid(pubNubId);
   Serial.println("PubNub set up");
 
   oldTime = 0;
-  pingNow = 10000; // make sure to send a ping first :)
   windowLEDs.begin();
   windowLEDs.show();
   handleLEDs.begin();
@@ -77,13 +78,14 @@ void setup() {
   sei();
 
   lastReceived = "bootcolor";
+
+  sendBoot();
 }
 
 int flipCount = 0;
 long deadline = 0;
 
 void onTimerISR() {
-
   updateStatusLed();
   handleLEDs.Update();
   windowLEDs.Update();
@@ -91,11 +93,7 @@ void onTimerISR() {
 }
 
 void loop() {
-
   doLeds();
-
-  ping();
-
   pollPubNub();
 }
 
@@ -113,18 +111,25 @@ void doLeds() {
     Serial.println("turn bootcolor");
     handleLEDs.RainbowCycle(5);
     windowLEDs.RainbowCycle(5);
+  } else if(strstr(lastReceived, "ping")) {
+    Serial.println("ping");
+    sendPong();
   } else {
     Serial.println("nothing");
   }
   Serial.println("exit doleds");
 }
 
+void toggleStatusLed() {
+  statusLed = !statusLed;
+  digitalWrite(LED_BUILTIN, statusLed);
+}
+
 void updateStatusLed() {
   unsigned long now = millis();
   if(now - oldTime > 500) {
-    statusLed = !statusLed;
+    toggleStatusLed();
     oldTime = now;
-    digitalWrite(LED_BUILTIN, statusLed);
   }
 }
 
@@ -132,7 +137,7 @@ void pollPubNub() {
   WiFiClient *client;
   Serial.println("waiting for a message (subscribe)");
 
-  PubSubClient *sclient = PubNub.subscribe(channel);
+  PubSubClient *sclient = PubNub.subscribe(channelListen);
   if (sclient != 0) {
     int i = 0;
     while (sclient->wait_for_data(10)) {
@@ -150,25 +155,30 @@ void pollPubNub() {
   Serial.println("");
 }
 
-void ping() {
-  if (pingNow >= 30) {
-    Serial.println("Sending ping");
-    createPing(message);
-    publish(message);
-    pingNow = 0;
-  }
-  
-  pingNow++;
+void sendBoot() {
+  Serial.println("Sending boot");
+  createBootMessage(message);
+  publish(message);
 }
 
-void createPing(char* s) {
-  sprintf(s, "{\"source\": \"leds\",\"type\": \"ping\",\"uptime\": \"%d\"}", millis() / 1000);
+void createBootMessage(char* s) {
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"boot\",\"uptime\": \"%d\"}", pubNubId, millis() / 1000);
+}
+
+void sendPong() {
+  Serial.println("Sending pong");
+  createPong(message);
+  publish(message);
+}
+
+void createPong(char* s) {
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"pong\",\"uptime\": \"%d\"}", pubNubId, millis() / 1000);
 }
 
 void publish(char* msg) {
   WiFiClient *client;
   
-  client = PubNub.publish(channel, msg);
+  client = PubNub.publish(channelPing, msg);
 
   if (!client) {
     //Serial.println("publishing error");
