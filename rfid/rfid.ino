@@ -12,11 +12,13 @@
 
 ESP8266WiFiMulti WiFiMulti;
 
-const static char channel[] = "rfid"; // channel to use
+const static char pubNubId[] = "rfid";
+const static char channelSend[] = "rfid";
+const static char channelPing[] = "ping";
 
 char message[256];
 
-volatile int pingNow;
+volatile int aliveNow;
 unsigned long oldTime;
 unsigned long feedbackTimer;
 int ledStatus;
@@ -59,10 +61,9 @@ void setup() {
 
   oldTime = 0;
   feedbackTimer = 0;
-  pingNow = 10000; // make sure to send a ping first :)
   ledStatus = 0;
   feedback = 0;
-  ping();
+  sendBoot();
   
   SPI.begin();
 
@@ -76,7 +77,7 @@ void loop() {
   if((millis() - oldTime) > 1000) {
     oldTime = millis();
 
-    ping();
+    sendAlive();
     if (feedback == 0) {
       toggleLed();
     }
@@ -113,7 +114,7 @@ int publishId() {
   Serial.print("Message : ");
   Serial.print(buffer);
   createMessage(message, buffer);
-  publish(message);
+  publish(message, channelSend);
   feedback = 5;
 }
 
@@ -127,29 +128,39 @@ void toggleLed() {
   }
 }
 
-void ping() {
-  if (pingNow >= 30) {
+void sendBoot() {
+  Serial.println("Sending boot");
+  createBootMessage(message);
+  publish(message, channelPing);
+}
+
+void createBootMessage(char* s) {
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"boot\",\"uptime\": \"%d\"}", pubNubId, millis() / 1000);
+}
+
+void sendAlive() {
+  if (aliveNow >= 30) {
     Serial.println("Sending ping");
-    createPing(message);
-    publish(message);
-    pingNow = 0;
+    createAlive(message);
+    publish(message, channelPing);
+    aliveNow = 0;
   }
 
-  pingNow++;
+  aliveNow++;
+}
+
+void createAlive(char* s) {
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"alive\",\"uptime\": \"%d\"}", pubNubId, millis() / 1000);
 }
 
 void createMessage(char* s, char* rfid) {
-  sprintf(s, "{\"source\": \"rfid\",\"type\": \"event\",\"rfid\": \"%s\"}", rfid);
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"event\",\"rfid\": \"%s\"}", pubNubId, rfid);
 }
 
-void createPing(char* s) {
-  sprintf(s, "{\"source\": \"rfid\",\"type\": \"ping\",\"uptime\": \"%d\"}", millis() / 1000);
-}
-
-void publish(char* msg) {
+void publish(char* msg, const char* chnl) {
   WiFiClient *client;
 
-  client = PubNub.publish(channel, msg);
+  client = PubNub.publish(chnl, msg);
 
   if (!client) {
     //Serial.println("publishing error");
@@ -166,4 +177,3 @@ void publish(char* msg) {
   client->stop();
   Serial.println("---");
 }
-
