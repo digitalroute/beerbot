@@ -45,6 +45,7 @@ void setup() {
   Serial.print("Wait for WiFi... ");
 
   while(WiFiMulti.run() != WL_CONNECTED) {
+    toggleLed();
     Serial.print(".");
     delay(500);
   }
@@ -57,10 +58,12 @@ void setup() {
   delay(500);
 
   PubNub.begin(SECRET_PUBKEY, SECRET_SUBKEY);
+  PubNub.set_uuid(pubNubId);
   Serial.println("PubNub set up");
 
   oldTime = 0;
   feedbackTimer = 0;
+  aliveNow = 0;
   ledStatus = 0;
   feedback = 0;
   sendBoot();
@@ -140,7 +143,7 @@ void createBootMessage(char* s) {
 
 void sendAlive() {
   if (aliveNow >= 30) {
-    Serial.println("Sending ping");
+    Serial.println("Sending alive");
     createAlive(message);
     publish(message, channelPing);
     aliveNow = 0;
