@@ -17,7 +17,9 @@ ESP8266WiFiMulti WiFiMulti;
 #define OPEN_CLOSE_LED_FREQUENCY 5
 #define BLINK_LED_FREQUENCY 2
 
-const static char channel[] = "valve"; // channel to use
+const static char pubNubId[] = "valve";
+const static char channelListen[] = "valve";
+const static char channelPing[] = "ping";
 
 #define BUF_LEN 256
 char message[256];
@@ -54,8 +56,9 @@ void setup() {
   while(WiFiMulti.run() != WL_CONNECTED) {
     toggleLed();
     Serial.print(".");
-    delay(500);
+    delay(100);
   }
+
 
   Serial.println("");
   Serial.println("WiFi connected");
@@ -65,9 +68,10 @@ void setup() {
   delay(500);
 
   PubNub.begin(SECRET_PUBKEY, SECRET_SUBKEY);
+  PubNub.set_uuid(pubNubId);
   Serial.println("PubNub set up");
 
-  sendBootMessage();
+  sendBoot();
 
   cli();
   timer1_attachInterrupt(onTimerISR);
@@ -99,6 +103,8 @@ void handleValve() {
     openValve();
   } else if(strstr(lastReceived, "close")) {
     closeValve();
+  } else if(strstr(lastReceived, "ping")) {
+    sendPong();
   } else {
     // blinkLed(5);
     Serial.println("Command was not open or close");
@@ -157,7 +163,7 @@ void pollPubNub() {
   WiFiClient *client;
   Serial.println("waiting for a message (subscribe)");
 
-  PubSubClient *sclient = PubNub.subscribe(channel);
+  PubSubClient *sclient = PubNub.subscribe(channelListen);
   if (sclient != 0) {
     int i = 0;
     while (sclient->wait_for_data(10)) {
@@ -175,30 +181,30 @@ void pollPubNub() {
   }
 }
 
-void ping() {
-  Serial.println("Sending ping");
-  createPing(message);
-  publish(message);
-}
-
-void createPing(char* s) {
-  sprintf(s, "{\"source\": \"valve\",\"type\": \"ping\",\"uptime\": \"%d\"}", millis() / 1000);
-}
-
-void sendBootMessage() {
-  Serial.println("Sending boot message");
+void sendBoot() {
+  Serial.println("Sending boot");
   createBootMessage(message);
   publish(message);
 }
 
 void createBootMessage(char* s) {
-  sprintf(s, "{\"source\": \"valve\",\"type\": \"boot\",\"uptime\": \"%d\"}", millis() / 1000);
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"boot\",\"uptime\": \"%d\"}", pubNubId, millis() / 1000);
+}
+
+void sendPong() {
+  Serial.println("Sending pong");
+  createPong(message);
+  publish(message);
+}
+
+void createPong(char* s) {
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"pong\",\"uptime\": \"%d\"}", pubNubId, millis() / 1000);
 }
 
 void publish(char* msg) {
   WiFiClient *client;
   
-  client = PubNub.publish(channel, msg);
+  client = PubNub.publish(channelPing, msg);
 
   if (!client) {
     //Serial.println("publishing error");
