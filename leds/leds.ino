@@ -25,13 +25,16 @@ unsigned int statusLed = LOW;
 #define LED_PIN_HANDLE 13
 #define LED_PIN_WINDOW 12
 
+#define NUMBER_OF_LEDS_HANDLE 7
+#define NUMBER_OF_LEDS_WINDOW 7
+
 #define TIMER_TICKS 10000
 
 void HandleComplete();
 void WindowComplete();
 
-NeoPatterns handleLEDs(7, LED_PIN_HANDLE, NEO_GRB + NEO_KHZ800, &HandleComplete);
-NeoPatterns windowLEDs(8, LED_PIN_WINDOW, NEO_GRB + NEO_KHZ800, &WindowComplete);
+NeoPatterns handleLEDs(NUMBER_OF_LEDS_HANDLE, LED_PIN_HANDLE, NEO_GRB + NEO_KHZ800, &HandleComplete);
+NeoPatterns windowLEDs(NUMBER_OF_LEDS_WINDOW, LED_PIN_WINDOW, NEO_GRB + NEO_KHZ800, &WindowComplete);
 
 void setup() {
   Serial.begin(115200);
