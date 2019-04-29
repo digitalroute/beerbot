@@ -15,9 +15,13 @@ const static char channelListen[] = "leds";
 const static char channelPing[] = "ping";
 
 #define BUF_LEN 256
+#define MAX_CMDS 2 // How many commands should we handle at the same time
+#define MAX_CMD_LEN 50 // This is every cmd inside the message, i.e ";theaterchase;handle;100;0;128;128;0;64;64;"
+
 char message[256];
 char receiveBuffer[BUF_LEN];
-char* lastReceived;
+char* lastReceived = "";
+char cmdArray[MAX_CMDS][MAX_CMD_LEN+1];
 
 unsigned long oldTime;
 unsigned int statusLed = LOW;
@@ -82,7 +86,8 @@ void setup() {
   timer1_write(TIMER_TICKS);
   sei();
 
-  lastReceived = "bootcolor";
+  handleLEDs.RainbowCycle(5);
+  windowLEDs.RainbowCycle(5);
 
   sendBoot();
 }
@@ -95,8 +100,8 @@ void onTimerISR() {
 }
 
 void loop() {
-  doLeds();
   pollPubNub();
+  doLeds();
 }
 
 void randomSleep() {
@@ -116,27 +121,62 @@ void randomSleep() {
 }
 
 void doLeds() {
+  int i;
+  char *cmd;
+
   Serial.print("entering doLeds with: ");
   Serial.print(lastReceived);
   Serial.println("");
-  if(strstr(lastReceived, "scanner")) {
-    doScanner();
-  } else if(strstr(lastReceived, "theaterchase")) {
-    doTheaterChase();
-  } else if(strstr(lastReceived, "rainbow")) {
-    doRainbow();
-  } else if(strstr(lastReceived, "bootcolor")) {
-    Serial.println("turn bootcolor");
-    handleLEDs.RainbowCycle(5);
-    windowLEDs.RainbowCycle(5);
-  } else if(strstr(lastReceived, "ping")) {
+
+  parseCmdsFromBuffer(lastReceived);
+
+  for (i = 0; i < MAX_CMDS; ++i) {
+    cmd = cmdArray[i];
+    // If string is empty, nothing to do :)
+    if (strlen(cmd) > 0) {
+      if(strstr(cmd, "scanner")) {
+        doScanner(cmd);
+      } else if(strstr(cmd, "theaterchase")) {
+        doTheaterChase(cmd);
+      } else if(strstr(cmd, "rainbow")) {
+        doRainbow(cmd);
+      } else {
+        Serial.println("nothing");
+      }
+    }
+  }
+
+  // This should be made nicer, not just if there is a "ping" in the message
+  if (strstr(lastReceived, "ping")) {
     Serial.println("ping");
     sendPong();
-  } else {
-    Serial.println("nothing");
   }
+
   Serial.println("exit doleds");
 }
+
+void parseCmdsFromBuffer(char *buffer) {
+   char *strtokIndx; // this is used by strtok() as an index
+   int i;
+
+   // zero terminate all strings
+   for(i = 0; i < MAX_CMDS; ++i) {
+      *cmdArray[i]=0;
+   }
+
+   i=0;
+   strtokIndx = strtok(buffer,"+"); // part before important stuff starts
+   while (strtokIndx != NULL) {
+      if (strstr(strtokIndx, ";")) {
+         if (strlen(strtokIndx) < MAX_CMD_LEN) {
+            strcpy(cmdArray[i], strtokIndx);
+            i++;
+         }
+      }
+      strtokIndx = strtok(NULL, "+");
+   }
+}
+
 
 void toggleStatusLed() {
   statusLed = !statusLed;
@@ -219,7 +259,7 @@ void WindowComplete() {};
 void HandleComplete() {};
 
 // ;scanner;window;i;r;g;b;
-void doScanner() {
+void doScanner(char *cmd) {
   char program[32] = {0};
   char placement[32] = {0};
   unsigned long i = 0;
@@ -229,7 +269,7 @@ void doScanner() {
 
   char *strtokIndx; // this is used by strtok() as an index
 
-  strtokIndx = strtok(lastReceived,";"); // part before ;scanner
+  strtokIndx = strtok(cmd,";"); // part before ;scanner
   if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   strtokIndx = strtok(NULL, ";");        // ;scanner;
   if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
@@ -276,7 +316,7 @@ void doScanner() {
 
 
 // ;scanner;window;i;r;g;b;
-void doTheaterChase() {
+void doTheaterChase(char *cmd) {
   char program[32] = {0};
   char placement[32] = {0};
   unsigned long i = 0;
@@ -289,7 +329,7 @@ void doTheaterChase() {
 
   char *strtokIndx; // this is used by strtok() as an index
 
-  strtokIndx = strtok(lastReceived,";"); // part before ;scanner
+  strtokIndx = strtok(cmd,";"); // part before ;scanner
   if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   strtokIndx = strtok(NULL, ";");        // ;scanner;
   if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
@@ -353,14 +393,14 @@ void doTheaterChase() {
 
 
 // ;scanner;window;i;r;g;b;
-void doRainbow() {
+void doRainbow(char *cmd) {
   char program[32] = {0};
   char placement[32] = {0};
   unsigned long i = 0;
 
   char *strtokIndx; // this is used by strtok() as an index
 
-  strtokIndx = strtok(lastReceived,";"); // part before ;scanner
+  strtokIndx = strtok(cmd,";"); // part before ;scanner
   if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
   strtokIndx = strtok(NULL, ";");        // ;scanner;
   if (strtokIndx == NULL) { Serial.println("strtokIndx is null"); return; }
