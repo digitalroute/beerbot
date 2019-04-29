@@ -166,7 +166,7 @@ void parseCmdsFromBuffer(char *buffer) {
 
    i=0;
    strtokIndx = strtok(buffer,"+"); // part before important stuff starts
-   while (strtokIndx != NULL) {
+   while (strtokIndx != NULL && i < MAX_CMDS) {
       if (strstr(strtokIndx, ";")) {
          if (strlen(strtokIndx) < MAX_CMD_LEN) {
             strcpy(cmdArray[i], strtokIndx);
