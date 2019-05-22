@@ -44,7 +44,9 @@ void setup() {
   digitalWrite(VALVE_PIN_CLOSE, LOW);
   digitalWrite(LED_PIN_OPEN, LOW);
   digitalWrite(LED_PIN_CLOSE, LOW);
-  
+
+  randomSleep();
+
   // We start by connecting to a WiFi network
   WiFi.mode(WIFI_STA);
   WiFiMulti.addAP(SECRET_SSID, SECRET_SSID_PASSWORD);
@@ -58,7 +60,6 @@ void setup() {
     Serial.print(".");
     delay(100);
   }
-
 
   Serial.println("");
   Serial.println("WiFi connected");
@@ -93,6 +94,22 @@ void onTimerISR() {
 void loop() {
   pollPubNub();
   handleValve();
+}
+
+void randomSleep() {
+  int randomSleep = random(20);
+  Serial.println();
+  Serial.print("Will sleep for ");
+  Serial.print(randomSleep);
+  Serial.print(" seconds before starting WiFi: ");
+
+  for (int i = 0; i < randomSleep; i++) {
+    Serial.print(".");
+    delay(1000);
+    toggleLed();
+  }
+
+  Serial.println();
 }
 
 void handleValve() {
