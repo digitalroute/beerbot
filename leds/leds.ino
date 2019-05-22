@@ -111,6 +111,8 @@ void randomSleep() {
     delay(1000);
     toggleStatusLed();
   }
+
+  Serial.println();
 }
 
 void doLeds() {

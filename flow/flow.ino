@@ -119,6 +119,8 @@ void randomSleep() {
     delay(1000);
     toggleLed();
   }
+
+  Serial.println();
 }
 
 void toggleLed() {
