@@ -42,6 +42,8 @@ void setup() {
   oldTime = millis();
 
   pinMode(LED_BUILTIN, OUTPUT);
+
+  randomSleep();
   
   // We start by connecting to a WiFi network
   WiFi.mode(WIFI_STA);
@@ -85,9 +87,6 @@ void setup() {
   sendBoot();
 }
 
-int flipCount = 0;
-long deadline = 0;
-
 void onTimerISR() {
   updateStatusLed();
   handleLEDs.Update();
@@ -98,6 +97,20 @@ void onTimerISR() {
 void loop() {
   doLeds();
   pollPubNub();
+}
+
+void randomSleep() {
+  int randomSleep = random(20);
+  Serial.println();
+  Serial.print("Will sleep for ");
+  Serial.print(randomSleep);
+  Serial.print(" seconds before starting WiFi: ");
+
+  for (int i = 0; i < randomSleep; i++) {
+    Serial.print(".");
+    delay(1000);
+    toggleStatusLed();
+  }
 }
 
 void doLeds() {

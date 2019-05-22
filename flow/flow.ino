@@ -38,6 +38,8 @@ void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);
 
+  randomSleep();
+  
   // We start by connecting to a WiFi network
   WiFi.mode(WIFI_STA);
   WiFiMulti.addAP(SECRET_SSID, SECRET_SSID_PASSWORD);
@@ -103,6 +105,20 @@ void loop() {
     feedback--;
   }
 
+}
+
+void randomSleep() {
+  int randomSleep = random(20);
+  Serial.println();
+  Serial.print("Will sleep for ");
+  Serial.print(randomSleep);
+  Serial.print(" seconds before starting WiFi: ");
+
+  for (int i = 0; i < randomSleep; i++) {
+    Serial.print(".");
+    delay(1000);
+    toggleLed();
+  }
 }
 
 void toggleLed() {
