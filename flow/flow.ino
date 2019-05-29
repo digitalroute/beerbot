@@ -71,7 +71,7 @@ void setup() {
   oldTime = 0;
   feedbackTimer = 0;
   aliveNow = 0;
- ledStatus = 0;
+  ledStatus = 0;
   feedback = 0;
   sendBoot();
 
