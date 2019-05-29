@@ -31,6 +31,8 @@ unsigned long feedbackTimer;
 int ledStatus;
 int feedback;
 
+char idString[20];
+
 void setup() {
   Serial.begin(115200);
   while (!Serial);
@@ -58,6 +60,8 @@ void setup() {
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+
+  generateId();
 
   delay(500);
 
@@ -107,6 +111,15 @@ void loop() {
 
 }
 
+void generateId() {
+  byte mac[6];
+
+  WiFi.macAddress(mac);
+  sprintf(idString, "%02X%02X%02X%02X%02X%02X", mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]);
+  Serial.print("ID (mac address): ");
+  Serial.println(idString);
+}
+
 void randomSleep() {
   int randomSleep = random(20);
   Serial.println();
@@ -140,7 +153,7 @@ void sendBoot() {
 }
 
 void createBootMessage(char* s) {
-  sprintf(s, "{\"source\": \"%s\",\"type\": \"boot\",\"uptime\": \"%d\"}", pubNubId, millis() / 1000);
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"boot\",\"uptime\": \"%d\",\"id\": \"%s\"}", pubNubId, millis() / 1000, idString);
 }
 
 void sendAlive() {
@@ -155,11 +168,11 @@ void sendAlive() {
 }
 
 void createAlive(char* s) {
-  sprintf(s, "{\"source\": \"%s\",\"total\": \"%d\",\"type\": \"alive\",\"uptime\": \"%d\"}", pubNubId, totalCount, millis() / 1000);
+  sprintf(s, "{\"source\": \"%s\",\"total\": \"%d\",\"type\": \"alive\",\"uptime\": \"%d\",\"id\": \"%s\"}", pubNubId, totalCount, millis() / 1000, idString);
 }
 
 void createMessage(char* s, int usage, int total) {
-  sprintf(s, "{\"source\": \"%s\",\"usage\": \"%d\",\"total\": \"%d\",\"type\": \"counter\",\"uptime\": \"%d\"}", pubNubId, usage, total, millis() / 1000);
+  sprintf(s, "{\"source\": \"%s\",\"usage\": \"%d\",\"total\": \"%d\",\"type\": \"counter\",\"uptime\": \"%d\",\"id\": \"%s\"}", pubNubId, usage, total, millis() / 1000, idString);
 }
 
 void publish(char* msg, const char* chnl) {
