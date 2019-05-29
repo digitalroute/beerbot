@@ -29,6 +29,8 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 
 #define PN_CHANNEL "Test"
 
+char idString[20];
+
 void setup() {
   Serial.begin(115200);
   while (!Serial);
@@ -58,6 +60,8 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   delay(500);
+
+  generateId();
 
   PubNub.begin(SECRET_PUBKEY, SECRET_SUBKEY);
   PubNub.set_uuid(pubNubId);
@@ -95,6 +99,15 @@ void loop() {
 
   publishId();
 
+}
+
+void generateId() {
+  byte mac[6];
+
+  WiFi.macAddress(mac);
+  sprintf(idString, "%02X%02X%02X%02X%02X%02X", mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]);
+  Serial.print("ID (mac address): ");
+  Serial.println(idString);
 }
 
 void randomSleep() {
@@ -156,7 +169,7 @@ void sendBoot() {
 }
 
 void createBootMessage(char* s) {
-  sprintf(s, "{\"source\": \"%s\",\"type\": \"boot\",\"uptime\": \"%d\"}", pubNubId, millis() / 1000);
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"boot\",\"uptime\": \"%d\",\"id\": \"%s\"}", pubNubId, millis() / 1000, idString);
 }
 
 void sendAlive() {
@@ -171,11 +184,11 @@ void sendAlive() {
 }
 
 void createAlive(char* s) {
-  sprintf(s, "{\"source\": \"%s\",\"type\": \"alive\",\"uptime\": \"%d\"}", pubNubId, millis() / 1000);
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"alive\",\"uptime\": \"%d\",\"id\": \"%s\"}", pubNubId, millis() / 1000, idString);
 }
 
 void createMessage(char* s, char* rfid) {
-  sprintf(s, "{\"source\": \"%s\",\"type\": \"event\",\"rfid\": \"%s\"}", pubNubId, rfid);
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"event\",\"rfid\": \"%s\",\"id\": \"%s\"}", pubNubId, rfid, idString);
 }
 
 void publish(char* msg, const char* chnl) {
