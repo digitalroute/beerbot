@@ -19,7 +19,7 @@ const static char channelPing[] = "ping";
 
 char message[256];
 
-byte sensorPin = 12;  // input pin
+byte sensorPin = 13;  // input pin
 //byte interruptPin = 2;
 volatile int pulseCount = 0;
 unsigned long totalCount = 0;
@@ -79,6 +79,7 @@ void setup() {
   digitalWrite(sensorPin, HIGH);
   //attachInterrupt(interruptPin, pulseCounter, FALLING);
   attachInterrupt(digitalPinToInterrupt(sensorPin), pulseCounter, FALLING);
+  Serial.println("All setup done");
 }
 
 void loop() {
