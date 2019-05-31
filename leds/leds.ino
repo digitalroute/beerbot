@@ -22,18 +22,22 @@ char* lastReceived;
 unsigned long oldTime;
 unsigned int statusLed = LOW;
 
-#define LED_PIN_HANDLE 13
-#define LED_PIN_WINDOW 12
+#define LED_PIN_HANDLE_LEFT 13
+#define LED_PIN_HANDLE_RIGHT 12
+#define LED_PIN_WINDOW 4
 
-#define NUMBER_OF_LEDS_HANDLE 7
+#define NUMBER_OF_LEDS_HANDLE_LEFT 7
+#define NUMBER_OF_LEDS_HANDLE_RIGHT 7
 #define NUMBER_OF_LEDS_WINDOW 7
 
 #define TIMER_TICKS 10000
 
-void HandleComplete();
+void HandleLeftComplete();
+void HandleRightComplete();
 void WindowComplete();
 
-NeoPatterns handleLEDs(NUMBER_OF_LEDS_HANDLE, LED_PIN_HANDLE, NEO_GRB + NEO_KHZ800, &HandleComplete);
+NeoPatterns handleLeftLEDs(NUMBER_OF_LEDS_HANDLE_LEFT, LED_PIN_HANDLE_LEFT, NEO_GRB + NEO_KHZ800, &HandleLeftComplete);
+NeoPatterns handleRightLEDs(NUMBER_OF_LEDS_HANDLE_RIGHT, LED_PIN_HANDLE_RIGHT, NEO_GRB + NEO_KHZ800, &HandleRightComplete);
 NeoPatterns windowLEDs(NUMBER_OF_LEDS_WINDOW, LED_PIN_WINDOW, NEO_GRB + NEO_KHZ800, &WindowComplete);
 
 void setup() {
@@ -73,8 +77,10 @@ void setup() {
   oldTime = 0;
   windowLEDs.begin();
   windowLEDs.show();
-  handleLEDs.begin();
-  handleLEDs.show();
+  handleLeftLEDs.begin();
+  handleLeftLEDs.show();
+  handleRightLEDs.begin();
+  handleRightLEDs.show();
 
   cli();
   timer1_attachInterrupt(onTimerISR);
@@ -89,7 +95,8 @@ void setup() {
 
 void onTimerISR() {
   updateStatusLed();
-  handleLEDs.Update();
+  handleLeftLEDs.Update();
+  handleRightLEDs.Update();
   windowLEDs.Update();
   timer1_write(TIMER_TICKS);
 }
@@ -127,7 +134,8 @@ void doLeds() {
     doRainbow();
   } else if(strstr(lastReceived, "bootcolor")) {
     Serial.println("turn bootcolor");
-    handleLEDs.RainbowCycle(5);
+    handleLeftLEDs.RainbowCycle(5);
+    handleRightLEDs.RainbowCycle(5);
     windowLEDs.RainbowCycle(5);
   } else if(strstr(lastReceived, "ping")) {
     Serial.println("ping");
@@ -216,7 +224,8 @@ void publish(char* msg) {
 }
 
 void WindowComplete() {};
-void HandleComplete() {};
+void HandleLeftComplete() {};
+void HandleRightComplete() {};
 
 // ;scanner;window;i;r;g;b;
 void doScanner() {
@@ -263,9 +272,12 @@ void doScanner() {
   Serial.print("b: ");
   Serial.println(b);
 
-  if (strstr(placement, "handle")) {
-    Serial.println("scanner: handle");
-    handleLEDs.Scanner(handleLEDs.Color(r,g,b), i);
+  if (strstr(placement, "handle_left")) {
+    Serial.println("scanner: handle_left");
+    handleLeftLEDs.Scanner(handleLeftLEDs.Color(r,g,b), i);
+  } else if (strstr(placement, "handle_right")) {
+    Serial.println("scanner: handle_right");
+    handleRightLEDs.Scanner(handleRightLEDs.Color(r,g,b), i);
   } else if (strstr(placement, "window")) {
     Serial.println("scanner: window");
     windowLEDs.Scanner(windowLEDs.Color(r,g,b), i);
@@ -275,7 +287,7 @@ void doScanner() {
 };
 
 
-// ;scanner;window;i;r;g;b;
+// ;theaterchase;handle;100;0;128;128;0;64;64;
 void doTheaterChase() {
   char program[32] = {0};
   char placement[32] = {0};
@@ -338,13 +350,14 @@ void doTheaterChase() {
   Serial.print("b_2: ");
   Serial.println(b_2);
 
-  if (strstr(placement, "handle")) {
-    Serial.println("theaterchase: handle");
-    handleLEDs.TheaterChase(handleLEDs.Color(r_1,g_1,b_1), handleLEDs.Color(r_2,g_2,b_2), i);
-    // handleLEDs.Scanner(handleLEDs.Color(r,g,b), i);
+  if (strstr(placement, "handle_left")) {
+    Serial.println("theaterchase: handle_left");
+    handleLeftLEDs.TheaterChase(handleLeftLEDs.Color(r_1,g_1,b_1), handleLeftLEDs.Color(r_2,g_2,b_2), i);
+  } else if (strstr(placement, "handle_right")) {
+    Serial.println("theaterchase: handle_right");
+    handleRightLEDs.TheaterChase(handleRightLEDs.Color(r_1,g_1,b_1), handleRightLEDs.Color(r_2,g_2,b_2), i);
   } else if (strstr(placement, "window")) {
     Serial.println("theaterchase: window");
-    //windowLEDs.Scanner(windowLEDs.Color(r,g,b), i);
     windowLEDs.TheaterChase(windowLEDs.Color(r_1,g_1,b_1), windowLEDs.Color(r_2,g_2,b_2), i);
   } else {
     Serial.println("theaterchase: placement not found");      
@@ -352,7 +365,7 @@ void doTheaterChase() {
 };
 
 
-// ;scanner;window;i;r;g;b;
+// ;rainbow;window;i;
 void doRainbow() {
   char program[32] = {0};
   char placement[32] = {0};
@@ -379,9 +392,12 @@ void doRainbow() {
   Serial.print("i: ");
   Serial.println(i);
 
-  if (strstr(placement, "handle")) {
-    Serial.println("rainbow: handle");
-    handleLEDs.RainbowCycle(i);
+  if (strstr(placement, "handle_left")) {
+    Serial.println("rainbow: handle_left");
+    handleLeftLEDs.RainbowCycle(i);
+  } else if (strstr(placement, "handle_right")) {
+    Serial.println("rainbow: handle_right");
+    handleRightLEDs.RainbowCycle(i);
   } else if (strstr(placement, "window")) {
     Serial.println("rainbow: window");
     windowLEDs.RainbowCycle(i);
