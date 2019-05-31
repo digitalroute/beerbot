@@ -272,7 +272,16 @@ void doScanner() {
   Serial.print("b: ");
   Serial.println(b);
 
-  if (strstr(placement, "handle_left")) {
+  if (strstr(placement, "all_leds")) {
+    Serial.println("scanner: all_leds");
+    handleLeftLEDs.Scanner(handleLeftLEDs.Color(r,g,b), i);
+    handleRightLEDs.Scanner(handleRightLEDs.Color(r,g,b), i);
+    windowLEDs.Scanner(windowLEDs.Color(r,g,b), i);
+  } else if (strstr(placement, "handle_both")) {
+    Serial.println("scanner: handle_both");
+    handleLeftLEDs.Scanner(handleLeftLEDs.Color(r,g,b), i);
+    handleRightLEDs.Scanner(handleRightLEDs.Color(r,g,b), i);
+  } else if (strstr(placement, "handle_left")) {
     Serial.println("scanner: handle_left");
     handleLeftLEDs.Scanner(handleLeftLEDs.Color(r,g,b), i);
   } else if (strstr(placement, "handle_right")) {
@@ -350,7 +359,16 @@ void doTheaterChase() {
   Serial.print("b_2: ");
   Serial.println(b_2);
 
-  if (strstr(placement, "handle_left")) {
+  if (strstr(placement, "all_leds")) {
+    Serial.println("theaterchase: all_leds");
+    handleLeftLEDs.TheaterChase(handleLeftLEDs.Color(r_1,g_1,b_1), handleLeftLEDs.Color(r_2,g_2,b_2), i);
+    handleRightLEDs.TheaterChase(handleRightLEDs.Color(r_1,g_1,b_1), handleRightLEDs.Color(r_2,g_2,b_2), i);
+    windowLEDs.TheaterChase(windowLEDs.Color(r_1,g_1,b_1), windowLEDs.Color(r_2,g_2,b_2), i);
+  } else if (strstr(placement, "handle_both")) {
+    Serial.println("theaterchase: handle_both");
+    handleLeftLEDs.TheaterChase(handleLeftLEDs.Color(r_1,g_1,b_1), handleLeftLEDs.Color(r_2,g_2,b_2), i);
+    handleRightLEDs.TheaterChase(handleRightLEDs.Color(r_1,g_1,b_1), handleRightLEDs.Color(r_2,g_2,b_2), i);
+  } else if (strstr(placement, "handle_left")) {
     Serial.println("theaterchase: handle_left");
     handleLeftLEDs.TheaterChase(handleLeftLEDs.Color(r_1,g_1,b_1), handleLeftLEDs.Color(r_2,g_2,b_2), i);
   } else if (strstr(placement, "handle_right")) {
@@ -392,7 +410,16 @@ void doRainbow() {
   Serial.print("i: ");
   Serial.println(i);
 
-  if (strstr(placement, "handle_left")) {
+  if (strstr(placement, "all_leds")) {
+    Serial.println("rainbow: all_leds");
+    handleLeftLEDs.RainbowCycle(i);
+    handleRightLEDs.RainbowCycle(i);
+    windowLEDs.RainbowCycle(i);
+  } else if (strstr(placement, "handle_both")) {
+    Serial.println("rainbow: handle_both");
+    handleLeftLEDs.RainbowCycle(i);
+    handleRightLEDs.RainbowCycle(i);
+  } else if (strstr(placement, "handle_left")) {
     Serial.println("rainbow: handle_left");
     handleLeftLEDs.RainbowCycle(i);
   } else if (strstr(placement, "handle_right")) {
