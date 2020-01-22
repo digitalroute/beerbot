@@ -19,6 +19,9 @@ char message[256];
 char receiveBuffer[BUF_LEN];
 char* lastReceived;
 
+// idString set to = CONFIG_BOT_ID/mac address
+char idString[32];
+
 unsigned long oldTime;
 unsigned int statusLed = LOW;
 
@@ -67,6 +70,8 @@ void setup() {
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+
+  generateId();
 
   delay(500);
 
@@ -126,6 +131,12 @@ void doLeds() {
   Serial.print("entering doLeds with: ");
   Serial.print(lastReceived);
   Serial.println("");
+
+  // Not our id, message wasn't for us
+  if( !strstr(lastReceived, idString)) {
+    return;
+  }
+
   if(strstr(lastReceived, "scanner")) {
     doScanner();
   } else if(strstr(lastReceived, "theaterchase")) {
@@ -181,6 +192,15 @@ void pollPubNub() {
   Serial.println("");
 }
 
+void generateId() {
+  byte mac[6];
+
+  WiFi.macAddress(mac);
+  sprintf(idString, "%s/%02X%02X%02X%02X%02X%02X", CONFIG_BOT_ID, mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]);
+  Serial.print("ID (mac address): ");
+  Serial.println(idString);
+}
+
 void sendBoot() {
   Serial.println("Sending boot");
   createBootMessage(message);
@@ -188,17 +208,17 @@ void sendBoot() {
 }
 
 void createBootMessage(char* s) {
-  sprintf(s, "{\"source\": \"%s\",\"type\": \"boot\",\"uptime\": \"%d\"}", pubNubId, millis() / 1000);
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"boot\",\"uptime\": \"%d\", \"id\": \"%s\"}", pubNubId, millis() / 1000, idString);
 }
 
 void sendPong() {
   Serial.println("Sending pong");
-  createPong(message);
+  createPongMessage(message);
   publish(message);
 }
 
-void createPong(char* s) {
-  sprintf(s, "{\"source\": \"%s\",\"type\": \"pong\",\"uptime\": \"%d\"}", pubNubId, millis() / 1000);
+void createPongMessage(char* s) {
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"pong\",\"uptime\": \"%d\", \"id\": \"%s\"}", pubNubId, millis() / 1000, idString);
 }
 
 void publish(char* msg) {

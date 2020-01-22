@@ -29,7 +29,8 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 
 #define PN_CHANNEL "Test"
 
-char idString[20];
+// idString set to = CONFIG_BOT_ID/mac address
+char idString[32];
 
 void setup() {
   Serial.begin(115200);
@@ -105,7 +106,7 @@ void generateId() {
   byte mac[6];
 
   WiFi.macAddress(mac);
-  sprintf(idString, "%02X%02X%02X%02X%02X%02X", mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]);
+  sprintf(idString, "%s/%02X%02X%02X%02X%02X%02X", CONFIG_BOT_ID, mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]);
   Serial.print("ID (mac address): ");
   Serial.println(idString);
 }
