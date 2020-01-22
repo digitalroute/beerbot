@@ -30,7 +30,8 @@ int ledStatus = 0;
 int ledFrequencyCounter = 0;
 int ledFrequency = DEFAULT_LED_FREQUENCY; // wait 10 ticks to toggle led
 
-char idString[20];
+// idString set to = CONFIG_BOT_ID/mac address
+char idString[32];
 
 void setup() {
   Serial.begin(115200);
@@ -104,7 +105,7 @@ void generateId() {
   byte mac[6];
   
   WiFi.macAddress(mac);
-  sprintf(idString, "%02X%02X%02X%02X%02X%02X", mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]);
+  sprintf(idString, "%s/%02X%02X%02X%02X%02X%02X", CONFIG_BOT_ID, mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]);
   Serial.print("ID (mac address): ");
   Serial.println(idString);
 }
@@ -229,11 +230,11 @@ void createBootMessage(char* s) {
 
 void sendPong() {
   Serial.println("Sending pong");
-  createPong(message);
+  createPongMessage(message);
   publish(message);
 }
 
-void createPong(char* s) {
+void createPongMessage(char* s) {
   sprintf(s, "{\"source\": \"%s\",\"type\": \"pong\",\"uptime\": \"%d\",\"id\": \"%s\"}", pubNubId, millis() / 1000), idString;
 }
 
@@ -256,5 +257,4 @@ void publish(char* msg) {
   }
   client->stop();
   Serial.println("---");
-  
 }
