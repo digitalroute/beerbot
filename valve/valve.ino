@@ -235,7 +235,7 @@ void sendPong() {
 }
 
 void createPongMessage(char* s) {
-  sprintf(s, "{\"source\": \"%s\",\"type\": \"pong\",\"uptime\": \"%d\",\"id\": \"%s\"}", pubNubId, millis() / 1000), idString;
+  sprintf(s, "{\"source\": \"%s\",\"type\": \"pong\",\"uptime\": \"%d\",\"id\": \"%s\"}", pubNubId, millis() / 1000, idString);
 }
 
 void publish(char* msg) {
